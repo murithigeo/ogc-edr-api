@@ -1,0 +1,19 @@
+{
+  "name": "exegesis-ogc-starter",
+  "version": "0.0.1",
+  "imports": {
+    "exegesis-express": "npm:exegesis-express",
+    "@types/node": "npm:@types/node",
+    "@types/geojson": "npm:@types/geojson",
+    "@turf/bbox-polygon": "npm:@turf/bbox-polygon",
+    "exegesis": "npm:exegesis",
+    "proj4": "npm:proj4",
+    "@turf/boolean-intersects": "npm:@turf/boolean-intersects",
+    "@scalar/core": "npm:@scalar/core",
+    "@turf/bbox": "npm:@turf/bbox",
+    "yaml": "npm:yaml",
+    "morgan": "npm:morgan",
+    "express":"npm:express"
+  },
+  "exports": {}
+}
