@@ -1,14 +1,9 @@
-import {
-  fromFile,
-  fromUrl,
-  generateSamplePoints,
-  regularCorridor,
-} from "../utils.ts";
-import type { Dataset } from "../index.ts";
-import { bbox } from "@turf/bbox";
+import { fromFile, generateSamplePoints, regularCorridor } from "../utils.ts";
+import type { Dataset, ExtentProps } from "../index.ts";
 import type { Coverage, ReferenceSystemConnection } from "coveragejson";
 import {
   type Bbox,
+  bbox,
   bboxPolygon,
   crs,
   type Datetime,
@@ -48,20 +43,31 @@ const refs = {
   "2025-08-21": "fpanv_m_gdo_20250821_t_300_z02.tif",
   "2025-09-01": "fpanv_m_gdo_20250901_t_300_z01.tif",
 };
-
-const cache = new Map<
-  string,
-  Awaited<ReturnType<Awaited<ReturnType<typeof fromFile>>["getImage"]>>
->();
-
-for (const k of Object.keys(refs)) {
-  cache.set(
-    k,
-    await (await fromFile(path.resolve(process.cwd(), "config/fapar", refs[k])))
-      .getImage(),
-  );
-}
 const [resX, resY] = [5, 5];
+
+const extents = Array<ExtentProps>();
+for (const id of Object.keys(refs)) {
+  const file = await fromFile(
+    path.join(process.cwd(), "/config/fapar", refs[id]),
+  );
+  const image = await file.getImage();
+  const bbox = image.bbox;
+  const [dx, dy] = [(bbox[2] - bbox[0]) / resX, (bbox[3] - bbox[1]) / resY];
+  extents.push({
+    id,
+    spatial: {
+      bbox: [image.bbox],
+      crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+      values: {
+        x: [`R${resX}/${bbox[0]}/${dx}`],
+        y: [`R${resY}/${bbox[1]}/${dy}`],
+      },
+    },
+    temporal: [id],
+    vertical: null,
+  });
+}
+
 const viParameter = {
   id: "vegetationindex",
   dataType: "float",
@@ -76,6 +82,7 @@ const viParameter = {
     label: { en: "Agricultural Drought Impact Index" },
   },
 } as Dataset["parameters"][0];
+
 export default {
   id: "fapar-anomaly",
   crs: ["OGC:CRS84", "EPSG:4326"],
@@ -85,11 +92,11 @@ export default {
     position: {
       default_output_format: "COVERAGEJSON",
       output_formats: ["COVERAGEJSON"],
-      allowAt: ["collection", "instance"],
+      allowAt: ["instance"],
       async handler(opts) {
-        const dates = Object.keys(refs)
-          .filter(instanceIdFilter(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime));
+        const date = Object.keys(refs)
+          .find(instanceIdFilter(opts.instanceId));
+        // .filter(datetimeFilter(opts.datetime))[0];
 
         const features: Feature<GeoJSON.Point>[] = opts.coords.type === "Point"
           ? [{ type: "Feature", geometry: opts.coords, properties: {} }]
@@ -107,7 +114,7 @@ export default {
           coverages: await Promise.all(
             features.map(
               samplePointToCoverage(
-                dates,
+                date,
                 bbox(opts.coords),
                 opts.parameters?.includes(viParameter.id) || false,
                 opts.crs,
@@ -125,44 +132,25 @@ export default {
       },
     },
     instances: {
-      allowAt: ["collection", "instance"],
+      allowAt: ["instance"],
       default_output_format: "JSON",
       handler(opts) {
-        return Object.keys(refs)
-          .filter(instanceIdFilter(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime))
-          .map((id) => {
-            const bbox = cache.get(id)!.bbox;
-            const [dx, dy] = [
-              (bbox[2] - bbox[0]) / resX,
-              (bbox[3] - bbox[1]) / resY,
-            ];
-            return {
-              id,
-              spatial: {
-                bbox: [bbox],
-                crs: "OGC:CRS84",
-                values: {
-                  x: [`R${resX}/${bbox[0]}/${dx}`],
-                  y: [`R${resY}/${bbox[1]}/${dy}`],
-                },
-              },
-              temporal: [id],
-            };
-          });
+        return extents
+          .filter((ext) => instanceIdFilter(opts.instanceId)(ext.id));
+        // .filter((ext) => datetimeFilter(opts.datetime)(ext.id))
       },
       default_instanceid: Object.keys(refs).slice(-1)[0],
     },
     corridor: {
-      allowAt: ["instance", "collection"],
+      allowAt: ["instance"],
       default_output_format: "COVERAGEJSON",
       output_formats: ["COVERAGEJSON"],
       height_units: ["meters", "kilometers"],
       width_units: ["meters", "kilometers"],
       async handler(opts) {
-        const dates = Object.keys(refs).filter(
+        const date = Object.keys(refs).find(
           instanceIdFilter(opts.instanceId),
-        );
+        )!;
         const includeValues = opts.parameters?.includes(viParameter.id) ||
           false;
         const bbox = regularCorridor(opts.coords, opts["corridor-width"]);
@@ -177,7 +165,7 @@ export default {
           type: "CoverageCollection",
           coverages: await Promise.all(
             samplingPoints.features.map(
-              samplePointToCoverage(dates, bbox, includeValues, opts.crs),
+              samplePointToCoverage(date, bbox, includeValues, opts.crs),
             ),
           ),
           parameters: {
@@ -191,14 +179,13 @@ export default {
       },
     },
     area: {
-      allowAt: ["collection", "instance"],
+      allowAt: ["instance"],
       output_formats: ["COVERAGEJSON"],
       default_output_format: "COVERAGEJSON",
       async handler(opts) {
         const bboxOfPolygon = bbox(opts.coords);
-        const dates = Object.keys(refs)
-          .filter(instanceIdFilter(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime));
+        const date = Object.keys(refs)
+          .find(instanceIdFilter(opts.instanceId));
         const samplePoints = generateSamplePoints(
           opts["resolution-x"] || resX,
           opts["resolution-y"] || resY,
@@ -216,7 +203,7 @@ export default {
           coverages: await Promise.all(
             samplePoints.features.map(
               samplePointToCoverage(
-                dates,
+                date,
                 bboxOfPolygon,
                 opts.parameters?.includes(viParameter.id) || false,
                 opts.crs,
@@ -236,12 +223,12 @@ export default {
     radius: {
       output_formats: ["COVERAGEJSON"],
       default_output_format: "COVERAGEJSON",
-      allowAt: ["collection", "instance"],
+      allowAt: ["instance"],
       within_units: ["meters", "kilometers"],
       async handler(opts) {
-        const dates = Object.keys(refs)
-          .filter(instanceIdFilter(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime));
+        const date = Object.keys(refs)
+          .find(instanceIdFilter(opts.instanceId));
+        // .filter(datetimeFilter(opts.datetime));
         const circles = buffer(opts.coords, opts.within, { units: "meters" })!;
         const bboxofcircles = bbox(circles);
         const samplePoints = generateSamplePoints(resX, resY, 0, bboxofcircles);
@@ -254,7 +241,7 @@ export default {
           coverages: await Promise.all(
             samplePoints.features.map(
               samplePointToCoverage(
-                dates,
+                date,
                 bboxofcircles,
                 opts.parameters?.includes(viParameter.id) || false,
                 opts.crs,
@@ -272,13 +259,14 @@ export default {
       },
     },
     trajectory: {
-      allowAt: ["collection", "instance"],
+      allowAt: ["instance"],
       default_output_format: "COVERAGEJSON",
       output_formats: ["COVERAGEJSON"],
       async handler(opts) {
-        const dates = Object.keys(refs)
-          .filter(instanceIdFilter(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime));
+        const date = Object.keys(refs)
+          .filter(datetimeFilter(opts.datetime))
+          .find(instanceIdFilter(opts.instanceId));
+        // .filter(datetimeFilter(opts.datetime));
         const minimalbuffer = buffer(opts.coords, 5, { units: "meters" });
         const bboxOfLines = bbox(minimalbuffer!);
         const samplePoints = generateSamplePoints(resX, resY, 0, bboxOfLines);
@@ -293,7 +281,7 @@ export default {
           coverages: await Promise.all(
             samplePoints.features.map(
               samplePointToCoverage(
-                dates,
+                date,
                 bboxOfLines,
                 opts.parameters?.includes(viParameter.id) || false,
                 opts.crs,
@@ -314,28 +302,26 @@ export default {
   keywords: ["fapar", "vegetation index"],
   output_formats: ["GEOJSON", "COVERAGEJSON"],
   getExtent() {
-    const geometries: GeoJSON.GeometryCollection = {
+    const bbox0 = bbox({
       type: "GeometryCollection",
-      geometries: Object.keys(refs).map((p) =>
-        bboxPolygon(cache.get(p)!.bbox).geometry
-      ),
-    };
-    const _bbox = bbox(geometries);
+      geometries: extents.map((p) => bboxPolygon(p.spatial.bbox[0]).geometry),
+    });
     const [dx, dy] = [
-      (_bbox[2] - _bbox[0]) / resX,
-      (_bbox[3] - _bbox[1]) / resY,
+      (bbox0[2] - bbox0[0]) / resX,
+      (bbox0[3] - bbox0[1]) / resY,
     ];
+
     return {
       id: this.id,
+      "temporal": extents.flatMap((p) => p.temporal),
       spatial: {
-        bbox: [_bbox, ...geometries.geometries.map((p) => bbox(p))],
-        crs: this.storageCrs,
+        bbox: [bbox0, ...extents.map((p) => p.spatial.bbox[0])],
+        crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
         values: {
-          x: [`R${resX}/${_bbox[0]}/${dx}`],
-          y: [`R${resY}/${_bbox[1]}/${dy}`],
+          x: [`R${resX}/${bbox0[0]}/${dx}`],
+          y: [`R${resY}/${bbox0[0]}/${dy}`],
         },
       },
-      temporal: Object.keys(refs),
     };
   },
   description: "",
@@ -371,13 +357,16 @@ function datetimeFilter(datetime: Datetime | undefined) {
 }
 
 function samplePointToCoverage(
-  dates: string[],
+  date: string,
   bbox: Bbox,
   includeValues: boolean,
   toCrs: keyof typeof crs,
 ) {
-  const images = dates.map((p) => cache.get(p)!);
   return async (feature: Feature<GeoJSON.Point>): Promise<Coverage> => {
+    const file = await fromFile(
+      path.join(process.cwd(), "/config/fapar", refs[date]),
+    );
+    const image = await file.getImage();
     const cov: Coverage<CoverageJSON.PointSeries> = {
       type: "Coverage",
       domainType: "PointSeries",
@@ -387,29 +376,25 @@ function samplePointToCoverage(
         axes: {
           x: { values: [feature.geometry.coordinates[0]] },
           y: { values: [feature.geometry.coordinates[1]] },
-          t: { values: dates },
+          t: { values: [date] },
         },
       },
       ranges: {},
     };
 
     if (includeValues) {
-      const values = await Promise.all(
-        images.flatMap(async (p) => {
-          const v = await p.getData(bbox)(
-            reproject(toCrs, "OGC:CRS84")(feature).geometry.coordinates,
-          );
-          let value = v[0];
-          if (Number.isNaN(value)) value = null;
-          return value;
-        }),
+      let value = await image.getData(bbox)(
+        reproject(toCrs, "OGC:CRS84")(feature).geometry.coordinates,
       );
+      value = value[0];
+      if (Number.isNaN(value)) value = null;
+
       cov.ranges[viParameter.id] = {
         type: "NdArray",
         dataType: "float",
-        values,
+        values: [value],
         axisNames: ["t"],
-        shape: [values.length],
+        shape: [1],
       };
     }
     return cov;

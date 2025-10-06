@@ -1,7 +1,6 @@
 import type { ExegesisPlugin, ExegesisPluginContext } from "exegesis-express";
 import type { DataQueryConfig, Dataset } from "../../config/index.ts";
 
-
 /**
  * @description validates query type requests.
  * For instance, querying a collection at /collection/id level maybe cumbersome.
@@ -42,7 +41,7 @@ export default function querytype(): ExegesisPlugin {
 
         if (!dataquery.allowAt.includes(at)) {
           let str = `/collections/{collectionId}`;
-          if (at === "instance") str += `/instances/{instanceId}`;
+          if (at !== "instance") str += `/instances/{instanceId}`;
           str += `/${query_type}...`;
           throw ctx.makeError(
             404,
