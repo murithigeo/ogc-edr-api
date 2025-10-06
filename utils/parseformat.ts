@@ -1,7 +1,7 @@
 import type { ExegesisContext } from "exegesis-express";
 import { contenttypes } from "./constants.ts";
 
-export default function parseFormat<T extends keyof typeof contenttypes>(
+export default function parseformat<T extends keyof typeof contenttypes>(
   ctx: ExegesisContext,
   default_output_format: T,
   output_formats: Array<T> = [default_output_format]
