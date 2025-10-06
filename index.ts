@@ -13,10 +13,10 @@ import {
   parameterNamePlugin,
   post2getPlugin,
   querytypePlugin,
+  resolutionsPlugin,
   setDatasetConfig,
   setServerHostname,
   unitsPlugin,
-  resolutionsPlugin,
   zPlugin,
 } from "./utils/plugins/index.ts";
 import controllers from "./controllers/index.ts";
@@ -48,6 +48,11 @@ app.use(
 );
 
 const server = http.createServer(app);
-server.listen(PORT, () => console.log(`Listening on ${PORT}`));
+try {
+  server.listen(PORT, () => console.log(`Listening on ${PORT}`));
+} catch (error) {
+  console.log(error);
+  process.exit(1);
+}
 
 export default server;
