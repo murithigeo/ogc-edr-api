@@ -43,7 +43,6 @@ app.use(
       unitsPlugin(),
       resolutionsPlugin(),
     ],
-    lazyCompileValidationSchemas: true,
   }),
 );
 
