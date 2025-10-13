@@ -1,5 +1,5 @@
 {
-  "name": "exegesis-ogc-starter",
+  "name": "ogc-edr-api",
   "version": "0.0.1",
   "imports": {
     "exegesis-express": "npm:exegesis-express",
@@ -12,14 +12,14 @@
     "@scalar/core": "npm:@scalar/core",
     "@turf/bbox": "npm:@turf/bbox",
     "yaml": "npm:yaml",
-    "morgan": "npm:morgan",
-    "express":"npm:express",
-    "@types/coveragejson":"npm:@types/coveragejson",
-    "betterknown":"npm:betterknown",
-    "convert":"npm:convert",
-    "wkx":"npm:wkx",
-    "@turf/buffer":"npm:@turf/buffer",
-    "geotiff":"npm:geotiff"
+    "express": "npm:express",
+    "@types/coveragejson": "npm:@types/coveragejson",
+    "betterknown": "npm:betterknown",
+    "convert": "npm:convert",
+    "wkx": "npm:wkx",
+    "@turf/buffer": "npm:@turf/buffer",
+    "geotiff": "npm:geotiff",
+    "vite": "npm:vite"
   },
   "exports": {}
 }

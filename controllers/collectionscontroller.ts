@@ -36,7 +36,7 @@ function getCollection(ctx: ExegesisContext) {
   doc = {
     ...doc,
     links: doc.links.concat(
-      new Links(ctx).self().alternates(output_formats).links,
+      new Links(ctx).self().alternates(output_formats).links
     ),
   };
   let data;
@@ -56,7 +56,7 @@ function getInstances(ctx: ExegesisContext) {
   const { format, output_formats } = parseformat(
     ctx,
     options.default_output_format,
-    options?.output_formats || dataset.output_formats,
+    options?.output_formats || dataset.output_formats
   );
   const values = options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" });
   const instances = values.map((value) => {
@@ -88,16 +88,16 @@ function getInstance(ctx: ExegesisContext) {
   const { format, output_formats } = parseformat(
     ctx,
     options.default_output_format!,
-    options.output_formats!,
+    options.output_formats!
   );
   const res = options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" })[0];
   const doc = asCollection(
     ctx,
     { ...dataset, id: ctx.params.path.instanceId },
-    res,
+    res
   );
   doc.links = doc.links.concat(
-    new Links(ctx).self().alternates(output_formats).links,
+    new Links(ctx).self().alternates(output_formats).links
   );
   let data;
   switch (format) {
@@ -121,7 +121,7 @@ export default {
 function toExtent(props: ExtentProps): Extent {
   if (props.temporal !== null) {
     props.temporal.sort(
-      (a, b) => new Date(a).getTime() - new Date(b).getTime(),
+      (a, b) => new Date(a).getTime() - new Date(b).getTime()
     );
   }
   if (props.vertical !== undefined) {
@@ -137,33 +137,38 @@ function toExtent(props: ExtentProps): Extent {
     },
     temporal: {
       trs: "Gregorian",
-      interval: props.temporal === null
-        ? [[null, null]]
-        : [[props.temporal[0], props.temporal[props.temporal.length - 1]]],
+      interval:
+        props.temporal === null
+          ? [[null, null]]
+          : [[props.temporal[0], props.temporal[props.temporal.length - 1]]],
       values: props.temporal,
     },
     vertical: props.vertical
       ? {
-        interval: props.vertical.values === null ? [[null, null]] : [
-          [
-            props.vertical.values[0].toString(),
-            props.vertical.values[
-              props.vertical.values?.length - 1
-            ].toString(),
-          ],
-        ],
-        values: props.vertical.values === null
-          ? null
-          : props.vertical.values.map((p) => p.toString()) || null,
-        vrs: props.vertical.vrs,
-      }
+          interval:
+            props.vertical.values === null
+              ? [[null, null]]
+              : [
+                  [
+                    props.vertical.values[0].toString(),
+                    props.vertical.values[
+                      props.vertical.values?.length - 1
+                    ].toString(),
+                  ],
+                ],
+          values:
+            props.vertical.values === null
+              ? null
+              : props.vertical.values.map((p) => p.toString()) || null,
+          vrs: props.vertical.vrs,
+        }
       : undefined,
   };
 }
 
 function toDataQueries(
   ctx: ExegesisContext,
-  dq: DataQueryConfig,
+  dq: DataQueryConfig
 ): { data_queries: DataQueries; links: Link[] } {
   const { instanceId } = ctx.params.path;
   const data_queries: Collection["data_queries"] = {};
@@ -173,9 +178,15 @@ function toDataQueries(
     // Dont generate nested instance documents
     if (k === "instances" && instanceId) continue;
     // Dont generate <query_type> if the endpoint is not allowed on .../instances/{instanceId}/{query_type}
-    if (!options.allowAt.includes("instance") && instanceId) continue;
+    if (instanceId) {
+      if (!options.allowAt.includes("instance")) continue;
+    } else {
+      if (!options.allowAt.includes("collection")) continue;
+    }
+    // if (!options.allowAt.includes("instance") && instanceId) continue;
     // Dont generate <query_type> if endpoint is not allowed on collection/{collectionId}/{query_type}
-    if (!options.allowAt.includes("collection") && !instanceId) continue;
+
+    // if (!options.allowAt.includes("collection") && !instanceId) continue;
     data_queries[k] = {
       link: {
         ...new Links(ctx).queryType(k, options.default_output_format),
@@ -196,7 +207,7 @@ function toDataQueries(
   return {
     data_queries,
     links: Object.values(data_queries).map(
-      ({ link: { variables: _, ...p } }) => p,
+      ({ link: { variables: _, ...p } }) => p
     ),
   };
 }
@@ -204,7 +215,7 @@ function toDataQueries(
 function asCollection(
   ctx: ExegesisContext,
   dataset: Dataset,
-  extent: ExtentProps,
+  extent: ExtentProps
 ): Collection {
   const data_queries = toDataQueries(ctx, dataset.data_queries);
   return {
@@ -227,15 +238,16 @@ function asCollection(
         };
         return acc;
       },
-      {},
+      {}
     ),
     output_formats: Array.from(
       new Set(
+        ...dataset.output_formats,
         Object.values(data_queries.data_queries).flatMap(
           (p: Collection["data_queries"][keyof Collection["data_queries"]]) =>
-            p!.link.variables?.output_formats || [],
-        ),
-      ),
+            p!.link.variables?.output_formats || []
+        )
+      )
     ),
     ...data_queries,
   };

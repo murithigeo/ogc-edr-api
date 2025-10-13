@@ -2,7 +2,8 @@
   "type": "module",
   "name": "ogc-edr-api",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build":"vite build"
   },
   "dependencies": {
     "@scalar/core": "^0.3.18",
