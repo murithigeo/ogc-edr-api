@@ -1,6 +1,6 @@
 @SERVER=http://localhost:3000
 @crs=crs=http://www.opengis.net/def/crs/EPSG/0/4326
-@collectionId=world-mountains
+@collectionId=fapar-anomaly
 @instanceId=Africa
 @itemId=64658099999
 @f=geojson
@@ -48,10 +48,10 @@ POST {{SERVER}}/collections/{{collectionId}}/radius
 Content-Type: application/json
 
 {
-    "coords":"{{point}}",
-    "radius":1000,
-    "within-units":"m",
-    "parameter-name":"{{parameter-name}}"
+    "coords":"POINT(36 1)",
+    "within-units":"meters",
+    "within":1000,
+    "parameter-name":["vegetationindex"]
 }
 
 ###

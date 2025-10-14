@@ -17,31 +17,30 @@ export function generateSamplePoints(
 ): FeatureCollection<Point, { z: number[] }> {
   const features = Array<Feature<Point, { z: number[] }>>();
   if (bbox.length === 4) bbox = [bbox[0], bbox[1], 0, bbox[2], bbox[3], 0];
-  let [xmin, ymin, zmin, xmax, ymax, zmax] = bbox;
+  const [xmin, ymin, zmin, xmax, ymax, zmax] = bbox;
+  const [xnd, ynd, znd] = [xn - 1, yn - 1, zn - 1];
   const [dx, dy, dz] = [
-    (xmax - xmin) / xn,
-    (ymax - ymin) / yn,
-    (zmax - zmin) / zn,
+    (xmax - xmin) / (xnd < 1 ? 1 : xnd),
+    (ymax - ymin) / (ynd < 1 ? 1 : ynd),
+    (zmax - zmin) / (znd < 1 ? 1 : znd),
   ];
-  const z = Array<number>(xn * yn);
+  const z = Array<number>();
   if (zmin !== zmax) {
     for (let _z = zmin; _z <= zmax; _z += dz) {
       z.push(_z);
     }
   } else z.push(zmin);
-  for (let xa = 0; xa < xn; xa++) {
-    for (let ya = 0; ya < yn; ya++) {
+
+  for (let i = 0; i < xn; i++) {
+    const x = xmin + i * dx;
+    for (let j = 0; j < yn; j++) {
+      const y = ymin + j * dy;
       features.push({
         type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [xmin, ymin],
-        },
+        geometry: { type: "Point", coordinates: [x, y] },
         properties: { z },
       });
-      ymin += dy;
     }
-    xmin += dx;
   }
 
   return {

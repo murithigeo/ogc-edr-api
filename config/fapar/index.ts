@@ -248,13 +248,13 @@ export default {
         const dates = Object.keys(refs)
           .filter(instanceIdFilter(opts.instanceId))
           .filter(datetimeFilter(opts.datetime));
-
         const circles = buffer(opts.coords, opts.within, { units: "meters" })!;
         const bboxofcircles = bbox(circles);
         const samplePoints = generateSamplePoints(resX, resY, 0, bboxofcircles);
         samplePoints.features = samplePoints.features.filter(
           geometryIntersects(circles)
         );
+
         const { dataType: _, ...vi } = viParameter;
         return {
           type: "CoverageCollection",
