@@ -140,8 +140,8 @@ export default {
           .filter((ext) => instanceIdFilter(opts.instanceId)(ext.id))
           .map((p) => {
             const [dx, dy] = [
-              p.spatial.bbox[0][2] - p.spatial.bbox[0][0],
-              p.spatial.bbox[0][3] - p.spatial.bbox[0][1],
+              (p.spatial.bbox[0][2] - p.spatial.bbox[0][0]) / resX,
+              (p.spatial.bbox[0][3] - p.spatial.bbox[0][1]) / resY,
             ];
 
             return {
@@ -339,7 +339,7 @@ export default {
         crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
         values: {
           x: [`R${resX}/${bbox0[0]}/${dx}`],
-          y: [`R${resY}/${bbox0[0]}/${dy}`],
+          y: [`R${resY}/${bbox0[1]}/${dy}`],
         },
       },
       vertical: undefined,
@@ -405,7 +405,7 @@ function samplePointToCoverage(
       //   reproject(toCrs, "OGC:CRS84")(feature).geometry.coordinates
       // );
       let values = await Promise.all(
-        images.map(async(img) => {
+        images.map(async (img) => {
           const rawvalue = await img.getData(bbox)(
             reproject(toCrs, "OGC:CRS84")(feature).geometry.coordinates
           );

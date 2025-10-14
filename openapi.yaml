@@ -2883,15 +2883,6 @@ components:
       required: true
       schema:
         type: string
-    download:
-      in: query
-      name: download
-      required: false
-      schema:
-        description: Allow a result to be download. Currently in testing, no filename customization to be done
-        type: boolean
-        default: true
-
   # Describing Common Responses
   responses:
     #Responses with coverageJSON, edrGeoJSON, text/yaml
@@ -2940,9 +2931,6 @@ components:
               - corridor-height
               - height-units
             properties:
-              download:
-                type: boolean
-                default: false
               coords:
                 description: Well Known Text LineString definition
                 type: string
@@ -2978,9 +2966,6 @@ components:
             required:
               - coords
             properties:
-              download:
-                type: boolean
-                default: false
               coords:
                 description: Well Known Text LineString definition
                 type: string
@@ -3002,9 +2987,6 @@ components:
           schema:
             type: object
             properties:
-              download:
-                type: boolean
-                default: false
               datetime:
                 type: string
               parameter-name:
@@ -3021,9 +3003,6 @@ components:
           schema:
             type: object
             properties:
-              download:
-                type: boolean
-                default: false
               bbox:
                 type: string
               datetime:
@@ -3036,9 +3015,6 @@ components:
             required:
               - coords
             properties:
-              download:
-                type: boolean
-                default: false
               coords:
                 description: Well Known Text Point definition
                 type: string
@@ -3062,9 +3038,6 @@ components:
             required:
               - bbox
             properties:
-              download:
-                type: boolean
-                default: false
               bbox:
                 type: string
               z:
@@ -3087,9 +3060,6 @@ components:
             required:
               - coords
             properties:
-              download:
-                type: boolean
-                default: false
               coords:
                 description: Well Known Text Polygon definition
                 type: string
@@ -3119,9 +3089,6 @@ components:
               - within
               - within-units
             properties:
-              download:
-                type: boolean
-                default: false
               coords:
                 description: Well Known Text Point definition
                 type: string

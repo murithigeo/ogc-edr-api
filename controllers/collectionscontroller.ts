@@ -241,13 +241,13 @@ function asCollection(
       {}
     ),
     output_formats: Array.from(
-      new Set(
+      new Set([
         ...dataset.output_formats,
-        Object.values(data_queries.data_queries).flatMap(
+        ...Object.values(data_queries.data_queries).flatMap(
           (p: Collection["data_queries"][keyof Collection["data_queries"]]) =>
             p!.link.variables?.output_formats || []
-        )
-      )
+        ),
+      ])
     ),
     ...data_queries,
   };

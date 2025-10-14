@@ -31,9 +31,8 @@ export default function coords(): ExegesisPlugin {
           const [, query_type]: [string, keyof typeof geometryTypes] = operation
             .split("@");
 
-          const params = await ctx.getParams();
+          const params = await ctx.getParams();          
           if (!("coords" in params.query)) return;
-
           const coords: string = params.query.coords;
 
           try {
@@ -127,6 +126,7 @@ export default function coords(): ExegesisPlugin {
               properties: {},
             }).geometry;
           } catch (err) {
+            console.log(err)
             if (err instanceof ValidationError) {
               throw err;
             } else {
@@ -135,29 +135,6 @@ export default function coords(): ExegesisPlugin {
                 in: "query",
                 docPath: ctx.api.pathItemPtr,
               });
-            }
-          }
-        },
-      };
-    },
-  };
-}
-
-export function collectionIdPlugin(
-  datasets: Array<{ id: string }>,
-): ExegesisPlugin {
-  return {
-    info: { name: "collectionId-validate-plugin" },
-    makeExegesisPlugin() {
-      return {
-        postSecurity: async (ctx: ExegesisPluginContext) => {
-          const params = await ctx.getParams();
-          if ("collectionId" in params.path) {
-            const collection = datasets.find(
-              ({ id }) => params.path.collectionId === id,
-            );
-            if (!collection) {
-              throw ctx.makeError(404, "no such collection/dataset");
             }
           }
         },

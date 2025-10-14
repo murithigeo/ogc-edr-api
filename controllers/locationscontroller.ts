@@ -8,7 +8,7 @@ async function getLocationsAtCollection(ctx: ExegesisContext) {
   const dataset: Dataset = ctx["ectx"].dataset;
   const options = dataset.data_queries.locations!;
 
-  const { output_formats } = parseformat(ctx, "GEOJSON", ["GEOJSON", "JSON"]);
+  const { output_formats } = parseformat(ctx, "JSON", ["GEOJSON", "JSON"]);
   const doc =await options.handleAll({
     ...ctx["ectx"],
   });

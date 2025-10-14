@@ -1,4 +1,4 @@
-@SERVER=http://localhost:3000/edr
+@SERVER=http://localhost:3000
 @crs=crs=http://www.opengis.net/def/crs/EPSG/0/4326
 @collectionId=world-mountains
 @instanceId=Africa

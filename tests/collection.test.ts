@@ -1,5 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "./index.test.ts";
+import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "./index.ts";
 
 const collections: {
   id: string;

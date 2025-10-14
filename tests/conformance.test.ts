@@ -1,5 +1,5 @@
 import { describe, it, beforeAll,expect } from "vitest";
-import { TEST_URL_BASE } from "./index.test.ts";
+import { TEST_URL_BASE } from "./index.ts";
 
 describe("/conformance", () => {
   let res: Response, data: any;

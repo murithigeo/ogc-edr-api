@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TEST_URL_BASE } from "./index.test.ts";
+import { TEST_URL_BASE } from "./index.ts";
 import { contenttypes } from "../utils/constants.ts";
 
 describe("/api tests", async () => {

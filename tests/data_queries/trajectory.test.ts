@@ -1,5 +1,5 @@
 import { describe, beforeEach, expect, it, afterEach } from "vitest";
-import { TEST_URL_BASE, MAX_COLLECTIONS_INSTANCES } from "../index.test.ts";
+import { TEST_URL_BASE, MAX_COLLECTIONS_INSTANCES } from "../index.ts";
 
 const collections: {
   [x: string]: any;

@@ -7,7 +7,7 @@ import {
   geometryIntersects,
   numberReturned,
   reproject,
-} from "..//utils/index.ts";
+} from "../utils/index.ts";
 import type { Dataset } from "./index.ts";
 import { bbox } from "@turf/bbox";
 import { HttpError } from "exegesis";
@@ -24,7 +24,7 @@ const features:Array<Feature> = mountains.features
   ) ;
 
 export default {
-  id: "features",
+  id: "mountains",
   crs: ["OGC:CRS84", "EPSG:4326"],
   output_formats: ["JSON", "GEOJSON", "HTML"],
   storageCrs: "OGC:CRS84",
@@ -50,7 +50,7 @@ export default {
     locations: {
       multi: true,
       output_formats: ["GEOJSON", "JSON"],
-      default_output_format: "GEOJSON",
+      default_output_format: "JSON",
       allowAt: ["collection", "instance"],
       handleAll(opts) {
         const matched = Object.groupBy(
@@ -72,14 +72,9 @@ export default {
           timeStamp: new Date().toISOString(),
           numberMatched: length,
           numberReturned: numberReturned(length, length, 0),
-          features: Object.entries(matched).map(([id, features]) => ({
-            type: "Feature",
-            geometry: bboxPolygon(
-              bbox({ type: "FeatureCollection", features: features! }),
-            ),
-            id,
-            properties: {},
-          })),
+          features: Object.entries(matched).map(([id, features]) => ({...bboxPolygon(
+              bbox({ type: "FeatureCollection", features: features! })
+            ),id}))
         });
       },
       handlerOne(opts) {

@@ -10,27 +10,27 @@ export default function post2getPlugin(): ExegesisPlugin {
     makeExegesisPlugin() {
       return {
         async postSecurity(ctx: ExegesisPluginContext) {
-          if (ctx.req.method !== "POST") return;
+          if (ctx.req.method.toUpperCase() !== "POST") return;
 
-          const url = new URL(ctx.api.serverObject?.url + "/" + ctx.req.url);
-          const queryParams = Array.from(url.searchParams.keys());
+          // const url = new URL(ctx.api.serverObject?.url + "/" + ctx.req.url);
+          // // const queryParams = Array.from(url.searchParams.keys());
 
-          if (queryParams.length > 0) {
-            throw ctx.makeValidationError(
-              `query param not expected on POST endpoint`,
-              {
-                name: queryParams.join(","),
-                docPath: ctx.api.pathItemPtr,
-                in: "query",
-              },
-            );
-          }
+          // // if (queryParams.length > 0) {
+          // //   throw ctx.makeValidationError(
+          // //     `query param not expected on POST endpoint`,
+          // //     {
+          // //       name: queryParams.join(","),
+          // //       docPath: ctx.api.pathItemPtr,
+          // //       in: "query",
+          // //     },
+          // //   );
+          // // }
           const params = await ctx.getParams();
-          const { "parameter-name": parameterName, ...others } = await ctx
-            .getRequestBody();
-          if (parameterName && Array.isArray(parameterName)) {
-            others["parameter-name"] = parameterName.join(",");
-          }
+          const { "parameter-name": parameterName, ...others } =
+            await ctx.getRequestBody();
+          if (parameterName) others["parameter-name"] = parameterName.join(",");
+          others["crs"] =
+            others.crs || "http://www.opengis.net/def/crs/OGC/1.3/CRS84";
           params.query = others;
         },
       };

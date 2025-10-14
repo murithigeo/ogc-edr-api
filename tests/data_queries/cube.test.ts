@@ -1,5 +1,5 @@
 import { expect, describe, it,beforeEach } from "vitest";
-import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "../index.test.ts";
+import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "../index.ts";
 
 const collections: { data_queries: { cube: { [x: string]: any } } }[] = [];
 let res = await fetch(`${TEST_URL_BASE}/collections`);

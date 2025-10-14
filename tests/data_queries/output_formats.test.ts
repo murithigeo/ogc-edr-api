@@ -1,4 +1,4 @@
-import { TEST_URL_BASE, MAX_COLLECTIONS_INSTANCES } from "../index.test.ts";
+import { TEST_URL_BASE, MAX_COLLECTIONS_INSTANCES } from "../index.ts";
 import { contenttypes } from "../../utils/constants.ts";
 import { describe, it, beforeAll, expect, beforeEach } from "vitest";
 
@@ -87,7 +87,7 @@ describe.each(collections)("$id /trajectory output_formats check", (c) => {
   it.each(
     (traj?.link?.variables?.output_formats as string[]) || c.output_formats
   )(
-    "dataset: $c.id does not throw on variable defined output format: %s",
+    "does not throw on variable defined output format: %s",
     { skip },
     async (f) => {
       uri.searchParams.set("f", f);

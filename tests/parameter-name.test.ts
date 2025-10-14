@@ -1,5 +1,5 @@
 import { beforeEach } from "node:test";
-import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "./index.test.ts";
+import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "./index.ts";
 import { describe, it, expect, beforeEach } from "vitest";
 
 let collections: {

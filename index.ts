@@ -19,11 +19,13 @@ import {
   unitsPlugin,
   zPlugin,
 } from "./utils/plugins/index.ts";
+import {logger} from "./utils/index.ts";
 import controllers from "./controllers/index.ts";
 import config from "./config/index.ts";
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+app.use(logger)
 app.use(
   await middleware(path.join(process.cwd(), "openapi.yaml"), {
     controllers,
@@ -43,7 +45,7 @@ app.use(
       unitsPlugin(),
       resolutionsPlugin(),
     ],
-  }),
+  })
 );
 
 const server = http.createServer(app);
