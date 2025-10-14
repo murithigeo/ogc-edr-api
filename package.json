@@ -3,7 +3,8 @@
   "name": "ogc-edr-api",
   "scripts": {
     "test": "vitest",
-    "build":"vite build"
+    "build": "vite build",
+    "start": "npm run build && node dist/index.js"
   },
   "dependencies": {
     "@scalar/core": "^0.3.18",
