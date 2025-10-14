@@ -9,7 +9,7 @@ export class Links extends Links_ {
     this.links.push({
       title: "View Instance",
       href: new URL(
-        `${this.server}/collections/${collectionId}/instances`,
+        `${this.server}/collections/${collectionId}/instances`
       ).toJSON(),
       rel: "data",
       type: contenttypes.JSON,
@@ -21,7 +21,7 @@ export class Links extends Links_ {
     this.links.push({
       title: "Instance",
       href: new URL(
-        `${this.server}/collections/${collectionId}/instances/${instanceId}`,
+        `${this.server}/collections/${collectionId}/instances/${instanceId}`
       ).toJSON(),
       rel: "collection",
       type: contenttypes.JSON,
@@ -30,7 +30,7 @@ export class Links extends Links_ {
   }
   queryType(
     query_type: string,
-    default_output_format: keyof typeof contenttypes,
+    default_output_format: keyof typeof contenttypes
   ): Link {
     const { collectionId, instanceId } = this.ctx.params.path;
     let str = `/collections/${collectionId}`;
@@ -40,7 +40,8 @@ export class Links extends Links_ {
       title: `Query this dataset using ${query_type}`,
       href: new URL(this.server + str).toString(),
       type: contenttypes[default_output_format],
-      rel: query_type === "items" ? "items" : "data",
+      rel:
+        query_type === "items" || query_type === "locations" ? "items" : "data",
       templated: false,
     };
   }
@@ -48,7 +49,7 @@ export class Links extends Links_ {
   location(
     collectionId: string,
     locationId: string,
-    options: { instanceId?: string },
+    options: { instanceId?: string }
   ) {
     let str = `/collections/${collectionId}`;
     if (options.instanceId) str += `/instances/${options.instanceId}`;
