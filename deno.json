@@ -1,6 +1,9 @@
 {
-  "name": "ogc-edr-api",
+  "name": "@murithigeo/ogc-edr-api",
   "version": "0.0.1",
+  "tasks": {
+    "dev": "deno run -A --watch-hmr index.ts"
+  },
   "imports": {
     "exegesis-express": "npm:exegesis-express",
     "@types/node": "npm:@types/node",
@@ -19,7 +22,12 @@
     "wkx": "npm:wkx",
     "@turf/buffer": "npm:@turf/buffer",
     "geotiff": "npm:geotiff",
-    "vite": "npm:vite"
+    "vite": "npm:vite",
+    "websocket-express": "npm:websocket-express",
+    "date-fns-tz": "npm:date-fns-tz",
+    "date-fns": "npm:date-fns",
+    "cors": "npm:cors",
+    "@types/cors": "npm:@types/cors"
   },
   "exports": {}
 }

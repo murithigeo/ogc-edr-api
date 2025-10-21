@@ -1,4 +1,5 @@
 import express from "express";
+import { WebSocketExpress } from "websocket-express";
 import http from "node:http";
 import process from "node:process";
 import { middleware } from "exegesis-express";
@@ -22,11 +23,15 @@ import {
 import { logger } from "./utils/index.ts";
 import controllers from "./controllers/index.ts";
 import config from "./config/index.ts";
+import wsRouter from "./asyncapi/index.ts";
+import cors from "cors"
 const PORT = process.env.PORT || 3000;
-const app = express();
+const app = new WebSocketExpress();
 
+app.use(cors())
 if (process.env.NODE_ENV !== "production") app.use(logger);
-app.use(
+app.use(wsRouter);
+app.useHTTP(
   await middleware(path.join(process.cwd(), "openapi.yaml"), {
     controllers,
     plugins: [
@@ -48,7 +53,8 @@ app.use(
   })
 );
 
-const server = http.createServer(app);
+const server = http.createServer();
+app.attach(server);
 try {
   server.listen(PORT, () => console.log(`Listening on ${PORT}`));
 } catch (error) {

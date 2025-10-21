@@ -18,16 +18,18 @@ import type {
   EdrFeature,
   EdrFeatureCollection,
   FeatureCollection,
+  MeasurementTypeObject,
 } from "../types.d.ts";
 import faparanomaly from "./fapar/index.ts";
 import mountains from "./mountains.ts";
+import openmeteo from "./openmeteo/index.ts";
 
 // //@external https://www.ncei.noaa.gov/support/access-data-service-api-user-documentation
 export default {
-  datasets: [mountains, faparanomaly].map((d) => ({
+  datasets: [mountains, faparanomaly,openmeteo].map((d) => ({
     ...d,
     crs: Array.from<keyof typeof crs>(
-      new Set(["http://www.opengis.net/def/crs/OGC/1.3/CRS84", ...d.crs]),
+      new Set(["http://www.opengis.net/def/crs/OGC/1.3/CRS84", ...d.crs])
     ),
     // crs: Array.from(
     //   new Set([...d.crs, ...d.crs.map((p) => crs[p].uri as keyof typeof crs)])
@@ -51,6 +53,7 @@ export type Dataset = {
     observedProperty: ObservedProperty;
     description?: I18N;
     label?: I18N;
+    measurementType?: MeasurementTypeObject;
   }>;
   data_queries: DataQueryConfig;
   getExtent: () => ExtentProps;
@@ -83,9 +86,9 @@ export type DataQueryConfig = {
   locations?: DataQueryProps & {
     multi?: boolean;
     handleAll: (
-      opts: Pick<BaseQueryOptions, "datetime" | "instanceId" | "z"> & {
+      opts: Pick<BaseQueryOptions, "datetime" | "instanceId" | "z"|"crs"> & {
         bbox?: GeoJSON.Polygon;
-      },
+      }
     ) => Promise<EdrFeatureCollection | FeatureCollection>;
     handlerOne: (
       opts: Pick<
@@ -97,7 +100,7 @@ export type DataQueryConfig = {
         | "server"
         | "instanceId"
         | "locationId"
-      >,
+      >
     ) => Promise<CoverageCollection | FeatureCollection | EdrFeatureCollection>;
   };
   instances?: DataQueryProps & {
@@ -107,39 +110,39 @@ export type DataQueryConfig = {
   radius?: DataQueryProps & {
     within_units: Array<Length>;
     handler: (
-      opts: RadiusQueryOptions,
+      opts: RadiusQueryOptions
     ) => Promise<FeatureCollection | EdrFeatureCollection | CoverageCollection>;
   };
   corridor?: DataQueryProps & {
     handler: (
-      opts: CorridorQueryOptions,
+      opts: CorridorQueryOptions
     ) => Promise<CoverageCollection | FeatureCollection>;
     width_units: Array<Length>;
     height_units: Array<Length>;
   };
   cube?: DataQueryProps & {
     handler: (
-      opts: CubeQueryOptions,
+      opts: CubeQueryOptions
     ) => Promise<CoverageCollection | EdrFeatureCollection | FeatureCollection>;
   };
   area?: DataQueryProps & {
     handler: (
-      opts: AreaQueryOptions,
+      opts: AreaQueryOptions
     ) => Promise<FeatureCollection | EdrFeatureCollection | CoverageCollection>;
   };
   trajectory?: DataQueryProps & {
     handler: (
-      opts: TrajectoryQueryOptions,
+      opts: TrajectoryQueryOptions
     ) => Promise<CoverageCollection | EdrFeatureCollection | FeatureCollection>;
   };
   position?: DataQueryProps & {
     handler: (
-      opts: PositionQueryOptions,
+      opts: PositionQueryOptions
     ) => Promise<FeatureCollection | EdrFeatureCollection | CoverageCollection>;
   };
   items?: DataQueryProps & {
     handleAll: (
-      opts: ItemsQueryOptions,
+      opts: ItemsQueryOptions
     ) => Promise<
       | CoverageCollection
       | EdrFeatureCollection
@@ -153,6 +156,7 @@ export type DataQueryConfig = {
       instanceId?: string;
       crs: keyof typeof crs;
       format: keyof typeof contenttypes;
+      server:string
     }) => Promise<Feature | EdrFeature | Coverage>;
   };
 };

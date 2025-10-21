@@ -1,19 +1,22 @@
-import { numberReturned, type Bbox, type Feature } from "../utils/index.ts";
-import type { FeatureCollection } from "../types.d.ts";
-import type { LineString, Point, MultiLineString } from "geojson";
+import { type Bbox, type Feature, numberReturned } from "../utils/index.ts";
+import type { FeatureCollection, Parameter } from "../types.d.ts";
+import type { LineString, MultiLineString, Point } from "geojson";
 import { buffer } from "@turf/buffer";
 import bbox from "@turf/bbox";
 import {
-  fromFile as fromF,
   fromArrayBuffer as fromAb,
+  fromFile as fromF,
   fromUrl as fromU,
 } from "geotiff";
+import { crs } from "../utils/projection.ts";
+import type { Crs } from "../utils/types.d.ts";
+import type { Dataset } from "./index.ts";
 
 export function generateSamplePoints(
   xn = 0,
   yn = 0,
   zn = 0,
-  bbox: Bbox
+  bbox: Bbox,
 ): FeatureCollection<Point, { z: number[] }> {
   const features = Array<Feature<Point, { z: number[] }>>();
   if (bbox.length === 4) bbox = [bbox[0], bbox[1], 0, bbox[2], bbox[3], 0];
@@ -54,11 +57,12 @@ export function generateSamplePoints(
 
 export function regularCorridor(
   coords: LineString | MultiLineString,
-  width: number
+  width: number,
 ) {
   const buffered = buffer(coords, width, { units: "meters" });
-  if (!buffered)
+  if (!buffered) {
     throw Error(`Unable to generate buffer around LineString/MultiLineString`);
+  }
 
   return bbox(buffered);
 }
@@ -78,10 +82,10 @@ export async function fromFile(...args: Parameters<typeof fromF>) {
         },
         get pixelPosition() {
           return (position: [number, number]) => {
-            const widthPct =
-              (position[0] - this.bbox[0]) / (this.bbox[2] - this.bbox[0]);
-            const heightPct =
-              (position[1] - this.bbox[1]) / (this.bbox[3] - this.bbox[1]);
+            const widthPct = (position[0] - this.bbox[0]) /
+              (this.bbox[2] - this.bbox[0]);
+            const heightPct = (position[1] - this.bbox[1]) /
+              (this.bbox[3] - this.bbox[1]);
 
             return [
               Math.floor(image.getWidth() * widthPct),
@@ -118,10 +122,10 @@ export async function fromArrayBuffer(...args: Parameters<typeof fromAb>) {
         },
         get pixelPosition() {
           return (position: [number, number]) => {
-            const widthPct =
-              (position[0] - this.bbox[0]) / (this.bbox[2] - this.bbox[0]);
-            const heightPct =
-              (position[1] - this.bbox[1]) / (this.bbox[3] - this.bbox[1]);
+            const widthPct = (position[0] - this.bbox[0]) /
+              (this.bbox[2] - this.bbox[0]);
+            const heightPct = (position[1] - this.bbox[1]) /
+              (this.bbox[3] - this.bbox[1]);
 
             return [
               Math.floor(image.getWidth() * widthPct),
@@ -158,10 +162,10 @@ export async function fromUrl(...args: Parameters<typeof fromU>) {
         },
         get pixelPosition() {
           return (position: [number, number]) => {
-            const widthPct =
-              (position[0] - this.bbox[0]) / (this.bbox[2] - this.bbox[0]);
-            const heightPct =
-              (position[1] - this.bbox[1]) / (this.bbox[3] - this.bbox[1]);
+            const widthPct = (position[0] - this.bbox[0]) /
+              (this.bbox[2] - this.bbox[0]);
+            const heightPct = (position[1] - this.bbox[1]) /
+              (this.bbox[3] - this.bbox[1]);
 
             return [
               Math.floor(image.getWidth() * widthPct),
@@ -182,4 +186,35 @@ export async function fromUrl(...args: Parameters<typeof fromU>) {
       };
     },
   };
+}
+
+export function asReferencing(
+  tocrs: keyof typeof crs,
+): CoverageJSON.ReferenceSystemConnection[] {
+  const crs_value: Crs = crs[tocrs]!;
+  return [
+    {
+      system: {
+        id: tocrs,
+        type: crs_value.type,
+      },
+      coordinates: ["x", "y"],
+    },
+    {
+      system: { type: "TemporalRS", calendar: "Gregorian" },
+      coordinates: ["t"],
+    },
+  ];
+}
+
+export function asParameters(
+  parameters: Dataset["parameters"],
+): { [x: string]: Parameter } {
+  return parameters.reduce((acc, value) => {
+    acc[value.id] = {
+      type: "Parameter",
+      ...value,
+    };
+    return acc;
+  }, {});
 }

@@ -64,11 +64,33 @@ https://ogc-edr-api.murithigeo.deno.net/collections/mountains/instances/Africa/l
 
 <https://ogc-edr-api.murithigeo.deno.net/collections/fapar-anomaly/position?coords=MULTIPOINT(36.804199 -1.285293, 39.660645 -4.050577)>
 
-<https://ogc-edr-api.murithigeo.deno.net/collections/fapar-anomaly/instances/2025-09-01/position?coords=MULTIPOINT(36.804199 -1.285293, 39.660645 -4.050577)>
+`https://ogc-edr-api.murithigeo.deno.net/collections/fapar-anomaly/instances/2025-09-01/position?coords=MULTIPOINT(36.804199 -1.285293, 39.660645 -4.050577)`
 
-### Part 2: Publish/Subscribe Workflow
+## Part 2: Publish/Subscribe Workflow
 
-WIP
+The approach is pretty simple. One only needs a database that allows the server to "watch" changes to messages and listen on them.
+
+When the client first connects, all cached messages are sent. Once the cache is depleted, ids of those messages are cached. The socket is kept open. When an watch event is detected, the message is passed on to the client.
+
+To receive events for all collections, you can:
+Upgrade the connection: `new WebSocket("https://ogc-edr-api.murithigeo.deno.net/collections")`
+Open a Socket directly: `new WebSocket("wss://ogc-edr-api.murithigeo.deno.net/collections")`
+
+### Stack
+
+`@deno/kv` A Key Value database that exposes a method to listen to messages
+`websocket-express` A package that allows a server to serve both WebSockets and HTTP Requests in Node.js
+
+### Examples
+ InstanceId:  `yyyy-MM-dd'T'HH:mm`
+    wss://ogc-edr-api.murithigeo.deno.net/collections
+    wss://ogc-edr-api.murithigeo.deno.net/collections/openmeteo-hourly
+
+    wss://ogc-edr-api.murithigeo.deno.net/collections/openmeteo-hourly/instances
+    wss://ogc-edr-api.murithigeo.deno.net/collections/openmeteo-hourly/instances/:instanceId
+
+    wss://ogc-edr-api.murithigeo.deno.net/collections/openmeteo-hourly/items/GHCND:KE000063740
+    wss://ogc-edr-api.murithigeo.deno.net/collections/openmeteo-hourly/instances/:instanceId/items/GHCND:KE000063740
 
 ## NOTES
 
