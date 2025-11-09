@@ -1,7 +1,6 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:@deno/kv@0.12": "0.12.0",
     "npm:@scalar/core@*": "0.3.18",
     "npm:@scalar/core@~0.3.18": "0.3.18",
     "npm:@turf/bbox-polygon@*": "7.2.0",
@@ -12,6 +11,7 @@
     "npm:@turf/boolean-intersects@^7.2.0": "7.2.0",
     "npm:@turf/buffer@*": "7.2.0",
     "npm:@turf/buffer@^7.2.0": "7.2.0",
+    "npm:@types/cors@*": "2.8.19",
     "npm:@types/cors@^2.8.19": "2.8.19",
     "npm:@types/coveragejson@*": "1.0.0",
     "npm:@types/coveragejson@1": "1.0.0",
@@ -24,6 +24,7 @@
     "npm:betterknown@^1.0.5": "1.0.5",
     "npm:convert@*": "5.12.1",
     "npm:convert@^5.12.0": "5.12.1",
+    "npm:cors@*": "2.8.5",
     "npm:cors@^2.8.5": "2.8.5",
     "npm:date-fns-tz@*": "3.2.0_date-fns@4.1.0",
     "npm:date-fns-tz@^3.2.0": "3.2.0_date-fns@4.1.0",
@@ -40,6 +41,7 @@
     "npm:morgan@^1.10.1": "1.10.1",
     "npm:proj4@*": "2.19.10",
     "npm:proj4@^2.19.10": "2.19.10",
+    "npm:tiny-typed-emitter@^2.1.0": "2.1.0",
     "npm:vite@*": "7.1.9_@types+node@24.2.0_yaml@2.8.1_picomatch@4.0.3",
     "npm:vitest@^3.2.4": "3.2.4_@types+node@24.2.0_vite@7.1.9__@types+node@24.2.0__yaml@2.8.1__picomatch@4.0.3_yaml@2.8.1",
     "npm:websocket-express@*": "4.0.1_@types+express@5.0.3_@types+ws@8.18.1_express@5.1.0_ws@8.18.3",
@@ -56,35 +58,6 @@
         "@types/json-schema",
         "call-me-maybe",
         "js-yaml"
-      ]
-    },
-    "@deno/kv-darwin-arm64@0.12.0": {
-      "integrity": "sha512-yL5Whs9sYGv6lrFFVbeqdDuBKHdn4dKqXIyk27HZjvftQYFfK4dazXseO+FNtfcxTFPcG+9GTA0nbo9n2M4Ycg==",
-      "os": ["darwin"],
-      "cpu": ["arm64"]
-    },
-    "@deno/kv-darwin-x64@0.12.0": {
-      "integrity": "sha512-ADqSwAsChneyROQEo3j1T7R5A4aZ4MFcxAy57+xAXszPADf2AhRQvyixN+KTNTdXaI0utyyD4rgBoAKApOhO/g==",
-      "os": ["darwin"],
-      "cpu": ["x64"]
-    },
-    "@deno/kv-linux-x64-gnu@0.12.0": {
-      "integrity": "sha512-PiDoORkhQHdtWzHFYydSFpy3G07qzwihLqOBidsihBMFeF9AGvxU8dlaaVI820nqbTrr1wARJTEWXxG6TcOIuA==",
-      "os": ["linux"],
-      "cpu": ["x64"]
-    },
-    "@deno/kv-win32-x64-msvc@0.12.0": {
-      "integrity": "sha512-M+zwuLf+hGSzOhY5kggKwpKGFqNvS3+DMTNCefLtBACZcDLyTu4pPUcOb6PHcdMXt+9pdc9azVgXkclJHIZ2iA==",
-      "os": ["win32"],
-      "cpu": ["x64"]
-    },
-    "@deno/kv@0.12.0": {
-      "integrity": "sha512-ANolBOnj3Y2tISOzUut/SQiunAU0k2lYLKiJxrEOmMjT2kzizvf3+eWcVN4dUIngph7+d6KrigyOWRJvUsKWYg==",
-      "optionalDependencies": [
-        "@deno/kv-darwin-arm64",
-        "@deno/kv-darwin-x64",
-        "@deno/kv-linux-x64-gnu",
-        "@deno/kv-win32-x64-msvc"
       ]
     },
     "@esbuild/aix-ppc64@0.25.10": {
@@ -1634,6 +1607,9 @@
         "tinyqueue"
       ]
     },
+    "tiny-typed-emitter@2.1.0": {
+      "integrity": "sha512-qVtvMxeXbVej0cQWKqVSSAHmKZEHAvxdF8HEUBFWts8h+xEo5m/lEiPakuyZ3BnCBjOD8i24kzNOiOLLgsSxhA=="
+    },
     "tinybench@2.9.0": {
       "integrity": "sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg=="
     },
@@ -1853,6 +1829,7 @@
       "npm:express@*",
       "npm:geotiff@*",
       "npm:proj4@*",
+      "npm:tiny-typed-emitter@*",
       "npm:vite@*",
       "npm:websocket-express@*",
       "npm:wkx@*",
@@ -1860,7 +1837,6 @@
     ],
     "packageJson": {
       "dependencies": [
-        "npm:@deno/kv@0.12",
         "npm:@scalar/core@~0.3.18",
         "npm:@turf/bbox-polygon@^7.2.0",
         "npm:@turf/bbox@^7.2.0",
@@ -1882,6 +1858,7 @@
         "npm:geotiff@^2.1.4-beta.0",
         "npm:morgan@^1.10.1",
         "npm:proj4@^2.19.10",
+        "npm:tiny-typed-emitter@^2.1.0",
         "npm:vitest@^3.2.4",
         "npm:wkx@0.5",
         "npm:yaml@^2.8.1"

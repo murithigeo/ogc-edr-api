@@ -7,7 +7,6 @@
     "start": "npm run build && node dist/index.js"
   },
   "dependencies": {
-    "@deno/kv": "^0.12.0",
     "@scalar/core": "^0.3.18",
     "@turf/bbox": "^7.2.0",
     "@turf/bbox-polygon": "^7.2.0",
@@ -29,6 +28,7 @@
     "geotiff": "^2.1.4-beta.0",
     "morgan": "^1.10.1",
     "proj4": "^2.19.10",
+    "tiny-typed-emitter": "^2.1.0",
     "vitest": "^3.2.4",
     "wkx": "^0.5.0",
     "yaml": "^2.8.1"

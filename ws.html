@@ -1,13 +1,13 @@
 <html>
-  <head>
-    <title>WebSocket Demo</title>
-  </head>
-  <body>
-    <script>
-      const socket = new WebSocket("ws://localhost:3000/collections/openmeteo-hourly/instances/2025-10-18T21:00/items");
-      socket.addEventListener("message", (e) => {
-        console.log(e)
-      });
-    </script>
-  </body>
+    <head>
+        <title>WebSocket Demo</title>
+    </head>
+    <body>
+        <script>
+            const socket = new WebSocket("ws://localhost:3000/collections");
+            socket.addEventListener("message", (e) => {
+                console.log(e);
+            });
+        </script>
+    </body>
 </html>

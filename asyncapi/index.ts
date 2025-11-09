@@ -1,98 +1,128 @@
 import { Router } from "websocket-express";
-import {
+import db, {
+  type Metadata,
   type Collection,
   type Instance,
   type Item,
-  MessageManager,
   type Operation,
 } from "./db.ts";
 import type { Feature, Link } from "../utils/types.d.ts";
-import type e from "express";
+import type { Request } from "express";
 import process from "node:process";
 const router = new Router({ caseSensitive: true, strict: true });
-const mgr = new MessageManager();
 
 router.ws("/collections", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-  const { value } = await mgr.messagesByType<Collection>("collection");
-
-  for (const message of value) {
-    ws.send(JSON.stringify({
-      ...message,
-      links: [collectionLink(req, message.collectionId)],
-    }));
+  const messages = await Array.fromAsync(
+    db.db.list<Collection & Metadata>({ prefix: ["messages", "collection"] })
+  );
+  for (const { value: message } of messages) {
+    ws.send(
+      JSON.stringify({
+        ...message,
+        links: [collectionLink(req, message.collectionId)],
+      })
+    );
     cachedMessageIds.push(message.id);
   }
   while (true) {
-    const watcher = await mgr.watch<Collection>([["messages", "collection"]]);
+    const watcher = await db.db
+      .watch<(Collection & Metadata)[]>([["notifications", "collection"]])
+      .getReader()
+      .read();
+
     if (watcher.done) break;
-    const { value } = watcher.value[0];
-    for (const message of value) {
+
+    for (const { value: message } of watcher.value) {
+      if (!message) continue;
       if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(JSON.stringify({
-        ...message,
-        links: [collectionLink(req, message.collectionId)],
-      }));
+      ws.send(JSON.stringify(message));
       cachedMessageIds.push(message.id);
     }
   }
 });
 
 router.ws("/collections/:collectionId", async (req, res) => {
-  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-  const { collectionId } = req.params;
-
-  const { value } = await mgr.messagesByType<Collection>("collection");
-  let messages = value.filter(filterByCollectionId(collectionId));
-  for (const message of messages) {
+  const [ws, cachedMessageIds, collectionId] = [
+    await res.accept(),
+    Array<string>(),
+    req.params.id,
+  ];
+  const messages = await Array.fromAsync(
+    db.db.list<Collection & Metadata>({
+      prefix: ["notifications", "collection", collectionId],
+    })
+  );
+  for (const { value: message } of messages) {
     ws.send(
       JSON.stringify({
         ...message,
-        links: [collectionLink(req, collectionId)],
-      }),
+        links: [collectionLink(req, message.collectionId)],
+      })
     );
     cachedMessageIds.push(message.id);
   }
-
   while (true) {
-    const watcher = await mgr.watch<Collection>([["messages", "collection"]]);
+    const watcher = await db.db
+      .watch<(Collection & Metadata)[]>([
+        ["notifications", "collection", collectionId],
+      ])
+      .getReader()
+      .read();
+
     if (watcher.done) break;
-    const { value } = watcher.value[0];
-    messages = value.filter(filterByCollectionId(collectionId));
-    for (const message of messages) {
+
+    for (const { value: message } of watcher.value) {
+      if (!message) continue;
       if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(JSON.stringify({
-        ...message,
-        links: [collectionLink(req, collectionId)],
-      }));
+      ws.send(
+        JSON.stringify({
+          ...message,
+          links: [collectionLink(req, collectionId)],
+        })
+      );
       cachedMessageIds.push(message.id);
     }
   }
 });
 router.ws("/collections/:collectionId/instances", async (req, res) => {
-  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-  const { collectionId } = req.params;
-  const { value } = await mgr.messagesByType<Instance>("instance");
-  let messages = value.filter(filterByCollectionId(collectionId));
-  for (const message of messages) {
-    ws.send(JSON.stringify({
-      ...message,
-      links: [collectionLink(req, collectionId, message.instanceId)],
-    }));
+  const [ws, cachedMessageIds, collectionId] = [
+    await res.accept(),
+    Array<string>(),
+    req.params.id,
+  ];
+  const messages = await Array.fromAsync(
+    db.db.list<Instance & Metadata>({
+      prefix: ["notifications", "instance", collectionId],
+    })
+  );
+  for (const { value: message } of messages) {
+    ws.send(
+      JSON.stringify({
+        ...message,
+        links: [collectionLink(req, message.collectionId, message.instanceId)],
+      })
+    );
     cachedMessageIds.push(message.id);
   }
   while (true) {
-    const watcher = await mgr.watch<Instance>([["messages", "instance"]]);
+    const watcher = await db.db
+      .watch<(Instance & Metadata)[]>([
+        ["notifications", "instance", collectionId],
+      ])
+      .getReader()
+      .read();
+
     if (watcher.done) break;
-    const { value } = watcher.value[0];
-    messages = value.filter(filterByCollectionId(collectionId));
-    for (const message of messages) {
+
+    for (const { value: message } of watcher.value) {
+      if (!message) continue;
       if (cachedMessageIds.includes(message.id)) continue;
       ws.send(
         JSON.stringify({
           ...message,
           links: [collectionLink(req, collectionId, message.instanceId)],
-        }),
+        })
       );
       cachedMessageIds.push(message.id);
     }
@@ -101,151 +131,134 @@ router.ws("/collections/:collectionId/instances", async (req, res) => {
 router.ws(
   "/collections/:collectionId/instances/:instanceId",
   async (req, res) => {
+    const { instanceId, collectionId } = req.params;
     const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-    const { value } = await mgr.messagesByType<Instance>("instance");
-    const { collectionId, instanceId } = req.params;
-    let messages = value
-      .filter(filterByCollectionId(collectionId))
-      .filter(filterByInstanceId(instanceId));
-    for (const message of messages) {
+    const messages = await Array.fromAsync(
+      db.db.list<Collection & Metadata>({
+        prefix: ["notifications", "instance", collectionId, instanceId],
+      })
+    );
+    for (const { value: message } of messages) {
       ws.send(
         JSON.stringify({
           ...message,
-          links: [collectionLink(req, collectionId, instanceId)],
-        }),
+          links: [collectionLink(req, message.collectionId, instanceId)],
+        })
       );
       cachedMessageIds.push(message.id);
     }
-
     while (true) {
-      const watcher = mgr.watch<Instance>([["messages", "instance"]]);
-      if (!(await watcher).done) break;
-      const { value } = (await watcher).value[0];
-      messages = value
-        .filter(filterByCollectionId(collectionId))
-        .filter(filterByInstanceId(instanceId));
-      for (const message of messages) {
+      const watcher = await db.db
+        .watch<(Collection & Metadata)[]>([
+          ["notifications", "instance", collectionId],
+        ])
+        .getReader()
+        .read();
+
+      if (watcher.done) break;
+
+      for (const { value: message } of watcher.value) {
+        if (!message) continue;
         if (cachedMessageIds.includes(message.id)) continue;
-        ws.send(JSON.stringify({
-          ...message,
-          links: [collectionLink(req, collectionId, instanceId)],
-        }));
+        ws.send(
+          JSON.stringify({
+            ...message,
+            links: [collectionLink(req, collectionId, instanceId)],
+          })
+        );
         cachedMessageIds.push(message.id);
       }
     }
-  },
+  }
 );
 router.ws(
   "/collections/:collectionId/instances/:instanceId/items",
   async (req, res) => {
+    const { collectionId, instanceId } = req.params;
     const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-    const { instanceId, collectionId } = req.params;
-    const { value } = await mgr.messagesByType<Item>("item");
-    let messages = value
-      .filter(filterByCollectionId(collectionId))
-      .filter(filterByInstanceId(instanceId))
-      .map(item2geojson());
-    for (const message of messages) {
-      ws.send(JSON.stringify({
-        ...message,
-        links: [
-          itemLink(req, collectionId, message.properties.itemId, instanceId),
-        ],
-      }));
+    const messages = await Array.fromAsync(
+      db.db.list<Item & Metadata>({
+        prefix: ["notifications", "item", collectionId, instanceId],
+      })
+    );
+    for (const { value: message } of messages) {
+      ws.send(JSON.stringify(item2geojson(req)(message)));
       cachedMessageIds.push(message.id);
     }
-
     while (true) {
-      const watcher = await mgr.watch<Item>([["messages", "item"]]);
+      const watcher = await db.db
+        .watch<(Item & Metadata)[]>([
+          ["notifications", "item", collectionId, instanceId],
+        ])
+        .getReader()
+        .read();
+
       if (watcher.done) break;
-      const { value } = watcher.value[0];
-      messages = value
-        .filter(filterByCollectionId(collectionId))
-        .filter(filterByInstanceId(instanceId))
-        .map(item2geojson());
-      for (const message of messages) {
+
+      for (const { value: message } of watcher.value) {
+        if (!message) continue;
         if (cachedMessageIds.includes(message.id)) continue;
-        ws.send(JSON.stringify({
-          ...message,
-          links: [
-            itemLink(req, collectionId, message.properties.itemId, instanceId),
-          ],
-        }));
+        ws.send(JSON.stringify(item2geojson(req)(message)));
         cachedMessageIds.push(message.id);
       }
     }
-  },
+  }
 );
 router.ws("/collections/:collectionId/items", async (req, res) => {
-  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
   const { collectionId } = req.params;
-  const { value } = await mgr.messagesByType<Item>("item");
-  let messages = value
-    .filter(filterByCollectionId(collectionId))
-    .map(item2geojson());
-  for (const message of messages) {
-    ws.send(JSON.stringify({
-      ...message,
-      links: [itemLink(req, collectionId, message.properties.itemId)],
-    }));
+  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+  const messages = await Array.fromAsync(
+    db.db.list<Item & Metadata>({
+      prefix: ["notifications", "item", collectionId],
+    })
+  );
+  for (const { value: message } of messages) {
+    ws.send(JSON.stringify(item2geojson(req)(message)));
     cachedMessageIds.push(message.id);
   }
-
   while (true) {
-    const watcher = await mgr.watch<Item>([["messages", "item"]]);
+    const watcher = await db.db
+      .watch<(Item & Metadata)[]>([["notifications", "item", collectionId]])
+      .getReader()
+      .read();
+
     if (watcher.done) break;
-    const { value } = watcher.value[0];
-    messages = value
-      .filter(filterByCollectionId(collectionId))
-      .map(item2geojson());
-    for (const message of messages) {
+
+    for (const { value: message } of watcher.value) {
+      if (!message) continue;
       if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(
-        JSON.stringify({
-          ...message,
-          links: [itemLink(req, collectionId, message.properties.itemId)],
-        }),
-      );
+      ws.send(JSON.stringify(item2geojson(req)(message)));
       cachedMessageIds.push(message.id);
     }
   }
 });
+
 router.ws("/collections/:collectionId/items/:itemId", async (req, res) => {
-  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
   const { collectionId, itemId } = req.params;
-
-  const { value } = await mgr.messagesByType<Item>("item");
-  let messages = value
-    .filter(filterByCollectionId(collectionId))
-    .filter(filterByItemId(itemId))
-    .map(item2geojson());
-
-  for (const message of messages) {
-    ws.send(
-      JSON.stringify({
-        ...message,
-        links: [itemLink(req, collectionId, itemId)],
-      }),
-    );
+  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+  const messages = await Array.fromAsync(
+    db.db.list<Item & Metadata>({
+      prefix: ["notifications", "item", collectionId, itemId],
+    })
+  );
+  for (const { value: message } of messages) {
+    ws.send(JSON.stringify(item2geojson(req)(message)));
     cachedMessageIds.push(message.id);
   }
-
   while (true) {
-    const watcher = await mgr.watch<Item>([["messages", "item"]]);
+    const watcher = await db.db
+      .watch<(Item & Metadata)[]>([
+        ["notifications", "item", collectionId, itemId],
+      ])
+      .getReader()
+      .read();
+
     if (watcher.done) break;
-    const { value } = watcher.value[0];
-    messages = value
-      .filter(filterByCollectionId(collectionId))
-      .filter(filterByItemId(itemId))
-      .map(item2geojson());
-    for (const message of messages) {
+
+    for (const { value: message } of watcher.value) {
+      if (!message) continue;
       if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(
-        JSON.stringify({
-          ...message,
-          links: [itemLink(req, collectionId, itemId)],
-        }),
-      );
+      ws.send(JSON.stringify(item2geojson(req)(message)));
       cachedMessageIds.push(message.id);
     }
   }
@@ -254,79 +267,69 @@ router.ws("/collections/:collectionId/items/:itemId", async (req, res) => {
 router.ws(
   "/collections/:collectionId/instances/:instanceId/items/:itemId",
   async (req, res) => {
-    const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
     const { collectionId, itemId, instanceId } = req.params;
-
-    const { value } = await mgr.messagesByType<Item>("item");
-    let messages = value
-      .filter(filterByCollectionId(collectionId))
-      .filter(filterByInstanceId(instanceId))
-      .filter(filterByItemId(itemId))
-      .map(item2geojson());
-
+    const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+    const messages = (
+      await Array.fromAsync(
+        db.db.list<Item & Metadata>({
+          prefix: ["notifications", "item", collectionId, instanceId, itemId],
+        })
+      )
+    ).map((e) => e.value);
     for (const message of messages) {
-      ws.send(
-        JSON.stringify({
-          ...message,
-          links: [itemLink(req, collectionId, itemId, instanceId)],
-        }),
-      );
+      ws.send(JSON.stringify(item2geojson(req)(message)));
       cachedMessageIds.push(message.id);
     }
-
     while (true) {
-      const watcher = await mgr.watch<Item>([["messages", "item"]]);
+      const watcher = await db.db
+        .watch<(Item & Metadata)[]>([
+          ["notifications", "item", collectionId, instanceId, itemId],
+        ])
+        .getReader()
+        .read();
+
       if (watcher.done) break;
-      const { value } = watcher.value[0];
-      messages = value
-        .filter(filterByCollectionId(collectionId))
-        .filter(filterByItemId(itemId))
-        .filter(filterByInstanceId(instanceId))
-        .map(item2geojson());
-      for (const message of messages) {
+
+      for (const { value: message } of watcher.value) {
+        if (!message) continue;
         if (cachedMessageIds.includes(message.id)) continue;
-        ws.send(JSON.stringify({
-          ...message,
-          links: [itemLink(req, collectionId, itemId, instanceId)],
-        }));
+        ws.send(JSON.stringify(item2geojson(req)(message)));
         cachedMessageIds.push(message.id);
       }
     }
-  },
+  }
 );
 
-function filterByCollectionId(collectionId: string) {
-  return (message: Collection | Item | Instance) => {
-    return collectionId === message.collectionId;
-  };
-}
-function filterByInstanceId(instanceId: string) {
-  return (message: Item | Instance) => {
-    if (!message.instanceId) return true;
-    return message.instanceId === instanceId;
-  };
-}
+// function filterByCollectionId(collectionId: string) {
+//   return (message: Collection | Item | Instance) => {
+//     return collectionId === message.collectionId;
+//   };
+// }
+// function filterByInstanceId(instanceId: string) {
+//   return (message: Item | Instance) => {
+//     if (!message.instanceId) return true;
+//     return message.instanceId === instanceId;
+//   };
+// }
 
-function filterByItemId(itemId: string) {
-  return (message: Item) => {
-    return message.itemId === itemId;
-  };
-}
+// function filterByItemId(itemId: string) {
+//   return (message: Item) => {
+//     return message.itemId === itemId;
+//   };
+// }
 
-function item2geojson() {
+function item2geojson(req: Request) {
   return (
-    message: Item & { id: string; pubtime: string },
-  ):
-    & Feature<
-      GeoJSON.Geometry,
-      {
-        pubtime: string;
-        itemId: string;
-        operation: Operation;
-        [x: string]: any;
-      }
-    >
-    & { id: string } => {
+    message: Item & { id: string; pubtime: string }
+  ): Feature<
+    GeoJSON.Geometry,
+    {
+      pubtime: string;
+      itemId: string;
+      operation: Operation;
+      [x: string]: any;
+    }
+  > & { id: string } => {
     const {
       type: _,
       collectionId: __,
@@ -340,16 +343,17 @@ function item2geojson() {
       geometry,
       id,
       properties,
+      links: [itemLink(req, message.collectionId, message.itemId)],
     };
   };
 }
-const root = (req: e.Request) =>
+const root = (req: Request) =>
   (process.env.NODE_ENV === "production" ? "https://" : "http://") +
   req.headers.host;
 function collectionLink(
-  req: e.Request,
+  req: Request,
   collectionId: string,
-  instanceId?: string,
+  instanceId?: string
 ): Link {
   let channel = `/collections/${collectionId}`;
   if (instanceId) channel += `/instances/${instanceId}`;
@@ -361,10 +365,10 @@ function collectionLink(
   };
 }
 function itemLink(
-  req: e.Request,
+  req: Request,
   collectionId: string,
   itemId: string,
-  instanceId?: string,
+  instanceId?: string
 ): Link {
   let channel = `/collections/${collectionId}`;
   if (instanceId) channel += `/instances/${instanceId}`;

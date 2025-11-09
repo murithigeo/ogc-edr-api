@@ -24,16 +24,12 @@ import faparanomaly from "./fapar/index.ts";
 import mountains from "./mountains.ts";
 import openmeteo from "./openmeteo/index.ts";
 
-// //@external https://www.ncei.noaa.gov/support/access-data-service-api-user-documentation
 export default {
-  datasets: [mountains, faparanomaly,openmeteo].map((d) => ({
+  datasets: [mountains, faparanomaly, openmeteo].map((d) => ({
     ...d,
     crs: Array.from<keyof typeof crs>(
       new Set(["http://www.opengis.net/def/crs/OGC/1.3/CRS84", ...d.crs])
     ),
-    // crs: Array.from(
-    //   new Set([...d.crs, ...d.crs.map((p) => crs[p].uri as keyof typeof crs)])
-    // ).sort((a, b) => a.localeCompare(b)),
   })),
 } as Config;
 
@@ -56,7 +52,7 @@ export type Dataset = {
     measurementType?: MeasurementTypeObject;
   }>;
   data_queries: DataQueryConfig;
-  getExtent: () => ExtentProps;
+  getExtent: () => Promise<ExtentProps>;
 };
 export type Config = {
   datasets: Array<Dataset>;
@@ -86,7 +82,7 @@ export type DataQueryConfig = {
   locations?: DataQueryProps & {
     multi?: boolean;
     handleAll: (
-      opts: Pick<BaseQueryOptions, "datetime" | "instanceId" | "z"|"crs"> & {
+      opts: Pick<BaseQueryOptions, "datetime" | "instanceId" | "z" | "crs"> & {
         bbox?: GeoJSON.Polygon;
       }
     ) => Promise<EdrFeatureCollection | FeatureCollection>;
@@ -105,7 +101,7 @@ export type DataQueryConfig = {
   };
   instances?: DataQueryProps & {
     default_instanceid: string;
-    handler: (opts: InstanceQueryOptions) => Array<ExtentProps>;
+    handler: (opts: InstanceQueryOptions) => Promise<Array<ExtentProps>>;
   };
   radius?: DataQueryProps & {
     within_units: Array<Length>;
@@ -156,7 +152,7 @@ export type DataQueryConfig = {
       instanceId?: string;
       crs: keyof typeof crs;
       format: keyof typeof contenttypes;
-      server:string
+      server: string;
     }) => Promise<Feature | EdrFeature | Coverage>;
   };
 };

@@ -22,7 +22,7 @@ GET {{SERVER}}/api.html
 GET {{SERVER}}/collections?f=yaml
 
 ###
-GET {{SERVER}}/collections/nighttimelight
+GET {{SERVER}}/collections/openmeteo-hourly
 
 ###
 GET {{SERVER}}/collections/{{collectionId}}/position

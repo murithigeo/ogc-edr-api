@@ -27,7 +27,13 @@
     "date-fns-tz": "npm:date-fns-tz",
     "date-fns": "npm:date-fns",
     "cors": "npm:cors",
-    "@types/cors": "npm:@types/cors"
+    "@types/cors": "npm:@types/cors",
+    "tiny-typed-emitter":"npm:tiny-typed-emitter"
   },
-  "exports": {}
+  "fmt": {
+    "singleQuote": true,
+    "quoteProps": "asNeeded"
+  },
+  "exports": {},
+  "unstable": ["kv"]
 }
