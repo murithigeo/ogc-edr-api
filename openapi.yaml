@@ -274,7 +274,7 @@ paths:
       parameters:
         ###! MISSING QUERY PARAMS
         - $ref: "#/components/parameters/collectionId"
-        - $ref: "#/components/parameters/datetime"
+        #- $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/f"
       responses:
         "200":
@@ -741,6 +741,7 @@ paths:
         - $ref: "#/components/parameters/f"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
       responses:
         "200":
           $ref: "#/components/responses/covJson_edrGeoJson_yaml"

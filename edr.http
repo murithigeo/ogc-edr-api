@@ -5,7 +5,6 @@
 @itemId=64658099999
 @f=geojson
 
-ws://localhost:3000/collections
 ### 
 GET {{SERVER}}/
 

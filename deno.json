@@ -27,13 +27,18 @@
     "date-fns-tz": "npm:date-fns-tz",
     "date-fns": "npm:date-fns",
     "cors": "npm:cors",
-    "@types/cors": "npm:@types/cors",
-    "tiny-typed-emitter":"npm:tiny-typed-emitter"
+    "@types/cors": "npm:@types/cors"
   },
   "fmt": {
     "singleQuote": true,
     "quoteProps": "asNeeded"
   },
   "exports": {},
-  "unstable": ["kv"]
+  "unstable": [
+    "kv"
+  ],
+  "deploy": {
+    "org": "murithigeo",
+    "app": "ogc-edr-api"
+  }
 }
