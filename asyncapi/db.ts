@@ -12,7 +12,8 @@ class Db {
     const keys = ["notifications", "item" , message.collectionId];
 
     if (message.instanceId) {
-      await this.newInstanceMessage(this.#item2instance(message));
+      // This duplicates the messages. Send message manually
+      // await this.newInstanceMessage(this.#item2instance(message));
       keys.push(message.instanceId);
     }
     await database.set(
@@ -24,7 +25,8 @@ class Db {
       },
       { expireIn }
     );
-    await this.newCollectionMessage(this.#item2collection(message));
+    // This duplicates the messages. Send message manually
+    //await this.newCollectionMessage(this.#item2collection(message));
   }
   async newCollectionMessage(message: Collection, expireIn = DAY_IN_MS * 4) {
     const [id, pubtime] = [this.id, this.pubtime];
@@ -47,7 +49,8 @@ class Db {
       { ...message, id, pubtime },
       { expireIn }
     );
-    await this.newCollectionMessage(this.#instance2collection(message));
+    // This duplicates the same event. Send message manually
+    // await this.newCollectionMessage(this.#instance2collection(message));
   }
   public get pubtime() {
     return new Date().toISOString();
@@ -119,22 +122,5 @@ export type Operation = "delete" | "update" | "create";
 type Pubtime = string;
 
 const db = new Db();
-// let itemId = 0;
-// setInterval(async () => {
-//   if (itemId > 10) return;
-//   await db.newItemMessage(
-//     {
-//       geometry: {
-//         type: "Point",
-//         coordinates: [itemId + 1, itemId + 2],
-//       },
-//       operation: "create",
-//       collectionId: "openmeteo-hourly",
-//       itemId: itemId.toString(),
-//     },
-//     1000
-//   );
-//   console.log(await Array.fromAsync(db.db.list<Collection>({prefix:["notifications","collection"]})));
-//   itemId++;
-// });
+
 export default db;

@@ -1,6 +1,6 @@
 import type { Feature } from "../../utils/types.d.ts";
 import type { Dataset } from "../index.ts";
-import stats from "./stations.json"  with { type: 'json' };
+import stats from "./stations.json" with { type: 'json' };
 import {
   bbox,
   bboxPolygon,
@@ -23,13 +23,11 @@ import buffer from "@turf/buffer";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const dbx = await Deno.openKv();
-
 class Observations {
   constructor() {}
 
   async newObservation(
-    observation: ValueType & { datetime: string },
+    observation: ValueType & { datetime: string; index: number },
     expireIn = DAY_IN_MS
   ) {
     const {
@@ -42,17 +40,24 @@ class Observations {
         itemId,
         geometry,
         collectionId,
+        instanceId: observation.datetime,
         operation: "create",
       },
       expireIn
     );
-    await dbx.set(
-      ["data", collectionId, observation.datetime, itemId],
-      observation,
-      {
-        expireIn,
-      }
+    const { datetime, index: _, ...props } = observation;
+    await db.db.set(["data", collectionId, itemId, datetime], props, {
+      expireIn,
+    });
+  }
+  async getObservations(stationId: string, dates: string[]) {
+    const primaryKeys = ["data", collectionId, stationId];
+    const arr = await Array.fromAsync(
+      db.db.list<ValueType>({ prefix: primaryKeys }, {})
     );
+    return arr
+      .filter((e) => datetimeFilter({ values: dates })(e.key[3] as string))
+      .map((e) => ({ date: e.key[3] as string, ...e.value }));
   }
 }
 const observations = new Observations();
@@ -64,11 +69,9 @@ const features: Feature<
     country: "Kenya" | "Tanzania";
     elevation: number;
   }
->[] = stats.features
-  //.filter((e) => e.properties.country === 'Kenya')
-  .sort((a, b) =>
-    a.properties.stationName.localeCompare(b.properties.stationName)
-  );
+>[] = stats.features.sort((a, b) =>
+  a.properties.stationName.localeCompare(b.properties.stationName)
+);
 
 const [collectionId, measurementType]: [string, MeasurementTypeObject] = [
   "openmeteo-hourly",
@@ -184,14 +187,13 @@ export default {
         const matched = await Promise.all(
           features
             .filter(geometryIntersects(opts.bbox))
-            // .filter(featuredatetimefilter("datetime", opts.datetime))
             .map(async (p) => ({
               ...p,
               properties: {
                 ...p.properties,
                 datetime: date,
                 ...(
-                  await dbx.get<ValueType>([
+                  await db.db.get<ValueType>([
                     "data",
                     collectionId,
                     date,
@@ -236,7 +238,7 @@ export default {
               ...feature,
               properties: {
                 ...feature.properties,
-                ...(await dbx.get<ValueType>([
+                ...(await db.db.get<ValueType>([
                   "data",
                   collectionId,
                   date,
@@ -335,11 +337,8 @@ export default {
         const dates = (await getDates())
           .filter(instanceIdFilter(opts.instanceId))
           .filter(datetimeFilter(opts.datetime));
-        const matched = features.filter(
-          geometryIntersects(
-            buffer(opts.coords, opts.within, { units: "meters" })!
-          )
-        );
+        const bufferD = buffer(opts.coords, opts.within, { units: "meters" })!;
+        const matched = features.filter(geometryIntersects(bufferD));
         return Promise.resolve({
           type: "CoverageCollection",
           coverages: await Promise.all(
@@ -352,6 +351,7 @@ export default {
         });
       },
     },
+    
   },
   async getExtent() {
     return Promise.resolve({
@@ -374,7 +374,7 @@ export default {
 
 type ValueType = {
   // Index of station
-  index: number;
+  // index: number;
   temperature_2m: number;
   dewpoint_2m: number;
   winddirection_10m: number;
@@ -414,16 +414,22 @@ async function retrieveAndSetObservations(url: URL) {
     for (let datetimeIndex = 0; datetimeIndex < dates.length; datetimeIndex++) {
       for (let index = 0; index < data.length; index++) {
         const datetime = dates[datetimeIndex];
-        const values = await dbx.get<CacheValue | null>(["data",
+        const values = await db.db.get<CacheValue | null>([
+          "data",
           collectionId,
           datetime,
         ]);
+        await db.newCollectionMessage({
+          collectionId,
+          operation: "update",
+        });
         if (!values.value)
           await db.newInstanceMessage({
             collectionId,
             instanceId: datetime,
             operation: "create",
           });
+
         await observations.newObservation({
           datetime,
           index,
@@ -437,7 +443,7 @@ async function retrieveAndSetObservations(url: URL) {
     }
   } catch (error) {
     console.log(`error querying open-meteo`);
-    console.error(error)
+    console.error(error);
   }
 }
 
@@ -480,10 +486,15 @@ function instanceIdFilter(instanceId?: string) {
 function feature2coverage(parameterNames: string[], dates: string[]) {
   return async (
     feature: (typeof features)[0]
-    // index?: number
   ): Promise<Coverage<PointSeries>> => {
+    const observation = await observations.getObservations(
+      feature.properties.stationId,
+      dates
+    );
+
     const coverage: Coverage<PointSeries> = {
       type: "Coverage",
+      id: feature.properties.stationId,
       domain: {
         type: "Domain",
         domainType: "PointSeries",
@@ -491,25 +502,11 @@ function feature2coverage(parameterNames: string[], dates: string[]) {
           x: { values: [feature.geometry.coordinates[0]] },
           y: { values: [feature.geometry.coordinates[1]] },
           z: { values: [feature.properties.elevation] },
-          t: { values: dates },
+          t: { values: observation.map((e) => e.date) },
         },
       },
       ranges: {},
     };
-
-    // if(parameters.includes())
-    const observation = await Promise.all(
-      dates.map(
-        async (p) =>
-          (
-            await dbx.get<ValueType>([
-              collectionId,
-              p,
-              feature.properties.stationId,
-            ])
-          ).value
-      )
-    );
 
     for (const parameter of parameters) {
       if (!parameterNames.includes(parameter.id)) continue;
@@ -528,13 +525,13 @@ function iso2dt(date: Date | number) {
   let date_ = new Date(date);
   date_ = setMinutes(date_, 0);
   return formatInTimeZone(date_, "Africa/Nairobi", "yyyy-MM-dd'T'HH:mm");
-  // addHours(date_, 3);
 }
 
 async function getDates() {
   const values = await Array.fromAsync(
-    dbx.list<ValueType>({ prefix: ["data", collectionId] })
+    db.db.list<ValueType>({ prefix: ["data", collectionId] })
   );
   //@ts-expect-error type mismatch
-  return Array.from<string>(new Set(values.map((e) => e.key[2])));
+  return Array.from<string>(new Set(values.map((e) => e.key[3])));
 }
+

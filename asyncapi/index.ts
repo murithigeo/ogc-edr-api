@@ -14,7 +14,9 @@ const router = new Router({ caseSensitive: true, strict: true });
 router.ws("/collections", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
   const messages = await Array.fromAsync(
-    db.db.list<Collection & Metadata>({ prefix: ["messages", "collection"] })
+    db.db.list<Collection & Metadata>({
+      prefix: ["notifications", "collection"],
+    })
   );
   for (const { value: message } of messages) {
     ws.send(
@@ -25,7 +27,7 @@ router.ws("/collections", async (req, res) => {
     );
     cachedMessageIds.push(message.id);
   }
-  while (true) {
+  while (!ws.CLOSED) {
     const watcher = await db.db
       .watch<(Collection & Metadata)[]>([["notifications", "collection"]])
       .getReader()
@@ -46,7 +48,7 @@ router.ws("/collections/:collectionId", async (req, res) => {
   const [ws, cachedMessageIds, collectionId] = [
     await res.accept(),
     Array<string>(),
-    req.params.id,
+    req.params.collectionId,
   ];
   const messages = await Array.fromAsync(
     db.db.list<Collection & Metadata>({
@@ -62,7 +64,7 @@ router.ws("/collections/:collectionId", async (req, res) => {
     );
     cachedMessageIds.push(message.id);
   }
-  while (true) {
+  while (!ws.CLOSED) {
     const watcher = await db.db
       .watch<(Collection & Metadata)[]>([
         ["notifications", "collection", collectionId],
@@ -89,7 +91,7 @@ router.ws("/collections/:collectionId/instances", async (req, res) => {
   const [ws, cachedMessageIds, collectionId] = [
     await res.accept(),
     Array<string>(),
-    req.params.id,
+    req.params.collectionId,
   ];
   const messages = await Array.fromAsync(
     db.db.list<Instance & Metadata>({
@@ -105,7 +107,7 @@ router.ws("/collections/:collectionId/instances", async (req, res) => {
     );
     cachedMessageIds.push(message.id);
   }
-  while (true) {
+  while (!ws.CLOSED) {
     const watcher = await db.db
       .watch<(Instance & Metadata)[]>([
         ["notifications", "instance", collectionId],
@@ -147,7 +149,7 @@ router.ws(
       );
       cachedMessageIds.push(message.id);
     }
-    while (true) {
+    while (!ws.CLOSED) {
       const watcher = await db.db
         .watch<(Collection & Metadata)[]>([
           ["notifications", "instance", collectionId],
@@ -185,7 +187,7 @@ router.ws(
       ws.send(JSON.stringify(item2geojson(req)(message)));
       cachedMessageIds.push(message.id);
     }
-    while (true) {
+    while (!ws.CLOSED) {
       const watcher = await db.db
         .watch<(Item & Metadata)[]>([
           ["notifications", "item", collectionId, instanceId],
@@ -216,7 +218,7 @@ router.ws("/collections/:collectionId/items", async (req, res) => {
     ws.send(JSON.stringify(item2geojson(req)(message)));
     cachedMessageIds.push(message.id);
   }
-  while (true) {
+  while (!ws.CLOSED) {
     const watcher = await db.db
       .watch<(Item & Metadata)[]>([["notifications", "item", collectionId]])
       .getReader()
@@ -245,7 +247,7 @@ router.ws("/collections/:collectionId/items/:itemId", async (req, res) => {
     ws.send(JSON.stringify(item2geojson(req)(message)));
     cachedMessageIds.push(message.id);
   }
-  while (true) {
+  while (!ws.CLOSED) {
     const watcher = await db.db
       .watch<(Item & Metadata)[]>([
         ["notifications", "item", collectionId, itemId],
@@ -280,7 +282,7 @@ router.ws(
       ws.send(JSON.stringify(item2geojson(req)(message)));
       cachedMessageIds.push(message.id);
     }
-    while (true) {
+    while (!ws.CLOSED) {
       const watcher = await db.db
         .watch<(Item & Metadata)[]>([
           ["notifications", "item", collectionId, instanceId, itemId],
@@ -307,7 +309,7 @@ router.ws(
 // }
 // function filterByInstanceId(instanceId: string) {
 //   return (message: Item | Instance) => {
-//     if (!message.instanceId) return true;
+//     if (!message.instanceId) return !ws.CLOSED;
 //     return message.instanceId === instanceId;
 //   };
 // }

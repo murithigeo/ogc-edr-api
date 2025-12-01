@@ -4,7 +4,11 @@
     </head>
     <body>
         <script>
-            const socket = new WebSocket("ws://localhost:3000/collections");
+            //    "wss://ogc-edr-api-3kpkgbm9gtej.murithigeo.deno.net/collections/openmeteo-hourly"
+            //
+            const socket = new WebSocket(
+            "http://localhost:3000/collections"
+            );
             socket.addEventListener("message", (e) => {
                 console.log(e);
             });
