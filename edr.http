@@ -1,7 +1,7 @@
 @SERVER=http://localhost:3000
 @crs=crs=http://www.opengis.net/def/crs/EPSG/0/4326
 @collectionId=openmeteo-hourly
-@instanceId=Kenya
+@instanceId=2025-12-01T00:00
 @itemId=64658099999
 @f=geojson
 
@@ -148,11 +148,11 @@ GET {{SERVER}}/collections/{{collectionId}}/locations/{{locationId}}
     &f={{f}}
 
 ###
-GET {{SERVER}}/collections/fapar-anomaly/instances
+GET {{SERVER}}/collections/{{collectionId}}/instances
         ?bbox=-53.1546130%2C-176.1764470%2C74.6335530%2C179.3666670
 
 ###
-GET {{SERVER}}/collections/fapar-anomaly/instances/2025-05-21
+GET {{SERVER}}/collections/{{collectionId}}/instances/2025-12-01T00:00
 
 ###
 GET {{SERVER}}/collections/{{collectionId}}/instances/{{instanceId}}/locations

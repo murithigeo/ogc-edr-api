@@ -18,7 +18,8 @@ async function getCollections(ctx: ExegesisContext) {
         return asCollection(ctx, p, await p.getExtent());
       })
     ),
-    links: new Links(ctx).self().alternates(output_formats).links,
+    links: new Links(ctx).self().alternates(output_formats).ws("/collections")
+      .links,
   };
   let data;
   switch (format) {
@@ -38,7 +39,10 @@ async function getCollection(ctx: ExegesisContext) {
   doc = {
     ...doc,
     links: doc.links.concat(
-      new Links(ctx).self().alternates(output_formats).links
+      new Links(ctx)
+        .self()
+        .alternates(output_formats)
+        .ws(`/collections/${ctx.params.path.collectionId}`).links
     ),
   };
   let data;
@@ -61,11 +65,23 @@ async function getInstances(ctx: ExegesisContext) {
     options?.output_formats || dataset.output_formats
   );
   const values = await options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" });
-  const instances = values.map((value) => {
-    ctx.params.path.instanceId = value.id;
-    return asCollection(ctx, { ...dataset, id: value.id }, value);
-  });
-  const { links } = new Links(ctx).self().alternates(output_formats);
+  const instances = values
+    .map((value) => {
+      ctx.params.path.instanceId = value.id;
+      return asCollection(ctx, { ...dataset, id: value.id }, value);
+    })
+    .map((e) => ({
+      ...e,
+      links: e.links.concat(new Links(ctx).instance(dataset.id, e.id).links),
+    }));
+  const links = instances
+    .flatMap((e) => e.links)
+    .concat(
+      new Links(ctx)
+        .self()
+        .alternates(output_formats)
+        .ws(`/collections/${dataset.id}/instances`).links
+    );
   const doc = {
     instances,
     links,
@@ -99,7 +115,7 @@ async function getInstance(ctx: ExegesisContext) {
     res
   );
   doc.links = doc.links.concat(
-    new Links(ctx).self().alternates(output_formats).links
+    new Links(ctx).self().alternates(output_formats).ws(`/collections/${dataset.id}/instances/${doc.id}`).links
   );
   let data;
   switch (format) {
@@ -147,23 +163,23 @@ function toExtent(props: ExtentProps): Extent {
     },
     vertical: props.vertical
       ? {
-          interval:
-            props.vertical.values === null
-              ? [[null, null]]
-              : [
-                  [
-                    props.vertical.values[0].toString(),
-                    props.vertical.values[
-                      props.vertical.values?.length - 1
-                    ].toString(),
-                  ],
-                ],
-          values:
-            props.vertical.values === null
-              ? null
-              : props.vertical.values.map((p) => p.toString()) || null,
-          vrs: props.vertical.vrs,
-        }
+        interval:
+          props.vertical.values === null
+            ? [[null, null]]
+            : [
+              [
+                props.vertical.values[0].toString(),
+                props.vertical.values[
+                  props.vertical.values?.length - 1
+                ].toString(),
+              ],
+            ],
+        values:
+          props.vertical.values === null
+            ? null
+            : props.vertical.values.map((p) => p.toString()) || null,
+        vrs: props.vertical.vrs,
+      }
       : undefined,
   };
 }
