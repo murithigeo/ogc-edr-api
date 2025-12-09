@@ -5,19 +5,21 @@ import {
   CollectionType,
   InstanceType,
   ItemType,
-  Metadata,
+  DEPLOY_ID,
 } from "./firebase.ts";
 import type { Feature, Link } from "../utils/types.d.ts";
 import type { Request } from "express";
 import process from "node:process";
-import { child, get, onValue, ref } from "firebase/database";
+import { onValue, ref } from "firebase/database";
 const router = new Router({ caseSensitive: true, strict: true });
+
+// Isolate each kv pair
 
 router.ws("/collections", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
 
   const unsubscribe = onValue(
-    ref(db.database, "notifications/collections"),
+    ref(db.database, `${DEPLOY_ID}/notifications/collections`),
     (snapshot) => {
       if (ws.readyState !== ws.OPEN) return;
       const data: Database["collections"] = snapshot.val() || {};
@@ -38,7 +40,7 @@ router.ws("/collections/:collectionId", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
   const { collectionId } = req.params;
   const unsubscribe = onValue(
-    ref(db.database, `notifications/collections/${collectionId}`),
+    ref(db.database, `${DEPLOY_ID}/notifications/collections/${collectionId}`),
     (snapshot) => {
       if (ws.readyState !== ws.OPEN) return;
       const data: Database["collections"][string] = snapshot.val() || {};
@@ -58,7 +60,7 @@ router.ws("/collections/:collectionId/instances", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
   const { collectionId } = req.params;
   const unsubscribe = onValue(
-    ref(db.database, `notifications/instances/${collectionId}`),
+    ref(db.database, `${DEPLOY_ID}/notifications/instances/${collectionId}`),
     (snapshot) => {
       if (ws.readyState !== ws.OPEN) return;
       const data: Database["instances"][string] = snapshot.val() || {};
@@ -81,7 +83,10 @@ router.ws(
     const { instanceId, collectionId } = req.params;
     const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
     const unsubscribe = onValue(
-      ref(db.database, `notifications/instances/${collectionId}/${instanceId}`),
+      ref(
+        db.database,
+        `${DEPLOY_ID}/notifications/instances/${collectionId}/${instanceId}`
+      ),
       (snapshot) => {
         if (ws.readyState !== ws.OPEN) return;
         const data: Database["instances"][string][string] =
@@ -105,7 +110,7 @@ router.ws(
     const { collectionId, instanceId } = req.params;
 
     const unsubscribe = onValue(
-      ref(db.database, `notifications/items/${collectionId}`),
+      ref(db.database, `${DEPLOY_ID}/notifications/items/${collectionId}`),
       (snapshot) => {
         if (ws.readyState !== ws.OPEN) return;
         const data: Database["items"][string] = snapshot.val() || {};
@@ -130,7 +135,7 @@ router.ws("/collections/:collectionId/items", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
 
   const unsubscribe = onValue(
-    ref(db.database, `notifications/items/${collectionId}`),
+    ref(db.database, `${DEPLOY_ID}/items/${collectionId}`),
     (snapshot) => {
       if (ws.readyState !== ws.OPEN) return;
       const data: Database["items"][string] = snapshot.val() || {};
@@ -152,7 +157,10 @@ router.ws("/collections/:collectionId/items/:itemId", async (req, res) => {
   const { collectionId, itemId } = req.params;
 
   const unsubscribe = onValue(
-    ref(db.database, `notifications/items/${collectionId}/${itemId}`),
+    ref(
+      db.database,
+      `${DEPLOY_ID}/notifications/items/${collectionId}/${itemId}`
+    ),
     (snapshot) => {
       if (ws.readyState !== ws.OPEN) return;
       const data: Database["items"][string][string] = snapshot.val() || {};
@@ -176,7 +184,10 @@ router.ws(
     const { collectionId, instanceId, itemId } = req.params;
 
     const unsubscribe = onValue(
-      ref(db.database, `notifications/items/${collectionId}/${itemId}`),
+      ref(
+        db.database,
+        `${DEPLOY_ID}/notifications/items/${collectionId}/${itemId}`
+      ),
       (snapshot) => {
         if (ws.readyState !== ws.OPEN) return;
         const data: Database["items"][string][string] = snapshot.val() || {};
@@ -211,20 +222,13 @@ function item2geojson(req: Request) {
     message: ItemType & { id: string; pubtime: string }
   ): Feature<
     GeoJSON.Geometry,
-    {
-      pubtime: string;
-      itemId: string;
-      operation: Metadata["operation"];
-      [x: string]: any;
-    }
-  > & { id: string } => {
-    const {
-      collectionId: __,
-      instanceId: ___,
-      geometry,
-      id,
-      ...properties
-    } = message;
+    Omit<ItemType, "geometry" | "id" | "collectionId">
+  > & {
+    id: string;
+  } => {
+    delete message.collectionId;
+    delete message.expireIn;
+    const { geometry, id, ...properties } = message;
     return {
       type: "Feature",
       geometry,

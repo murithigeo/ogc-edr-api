@@ -10,7 +10,11 @@ import {
   update,
 } from "firebase/database";
 
-console.log(env)
+// 2025-12-09T14:44:100;
+export const DEPLOY_ID = `${process.env.NODE_ENV || "development"}-${
+  new Date().toISOString().split(".")[0]
+}`;
+
 // Init config
 const firebase = initializeApp({
   apiKey: env.FIREBASE_API_KEY,
@@ -85,7 +89,9 @@ class RealtimeDbManager {
     const updates: { [x: string]: CollectionType } = {};
     for (const i of messages) {
       const [id, pubtime] = [this.#id, this.#pubtime];
-      updates[`notifications/collections/${i.collectionId}/${id}`] = {
+      updates[
+        `${DEPLOY_ID}/notifications/collections/${i.collectionId}/${id}`
+      ] = {
         ...i,
         expireIn: this.#expireIn(expireIn),
         id,
@@ -110,7 +116,9 @@ class RealtimeDbManager {
     for (const i of message) {
       const [id, pubtime] = [this.#id, this.#pubtime];
 
-      updates[`notifications/items/${i.collectionId}/${i.itemId}/${id}`] = {
+      updates[
+        `${DEPLOY_ID}/notifications/items/${i.collectionId}/${i.itemId}/${id}`
+      ] = {
         ...i,
         id,
         pubtime,
@@ -133,7 +141,7 @@ class RealtimeDbManager {
     for (const i of message) {
       const [id, pubtime] = [this.#id, this.#pubtime];
       updates[
-        `notifications/instances/${i.collectionId}/${i.instanceId}/${id}`
+        `${DEPLOY_ID}/notifications/instances/${i.collectionId}/${i.instanceId}/${id}`
       ] = { ...i, pubtime, id, expireIn: this.#expireIn(expireIn) };
     }
     this.updates = { ...this.updates, ...updates };
@@ -159,7 +167,7 @@ class RealtimeDbManager {
   // async deleteCollectionMessage(collectionId: string, id: UUID) {}
   async deleteExpiredItemMessages() {
     const snapshot = await get(
-      child(ref(this.database), "notifications/items")
+      child(ref(this.database), `${DEPLOY_ID}/notifications/items`)
     );
     if (!snapshot.exists()) return;
     const data: Database["items"] = snapshot.val();
@@ -171,7 +179,7 @@ class RealtimeDbManager {
             await remove(
               ref(
                 this.database,
-                `notifications/items/${collectionId}/${itemId}/${uuid}`
+                `${DEPLOY_ID}/notifications/items/${collectionId}/${itemId}/${uuid}`
               )
             );
           }
@@ -182,7 +190,7 @@ class RealtimeDbManager {
 
   async deleteExpiredCollectionMessages() {
     const snapshot = await get(
-      child(ref(this.database), "notifications/collections")
+      child(ref(this.database), `${DEPLOY_ID}/notifications/collections`)
     );
     if (!snapshot.exists()) return;
     const data: Database["collections"] = snapshot.val();
@@ -193,7 +201,7 @@ class RealtimeDbManager {
           await remove(
             ref(
               this.database,
-              `notifications/collections/${collectionId}/${uuid}`
+              `${DEPLOY_ID}/notifications/collections/${collectionId}/${uuid}`
             )
           );
         }
@@ -203,7 +211,7 @@ class RealtimeDbManager {
 
   async deleteExpiredInstanceMessages() {
     const snapshot = await get(
-      child(ref(this.database), "notifications/instances")
+      child(ref(this.database), `${DEPLOY_ID}/notifications/instances`)
     );
     if (!snapshot.exists()) return;
     const data: Database["instances"] = snapshot.val();
@@ -215,7 +223,7 @@ class RealtimeDbManager {
             await remove(
               ref(
                 this.database,
-                `notifications/instances/${collectionId}/${instanceId}/${uuid}`
+                `${DEPLOY_ID}/notifications/instances/${collectionId}/${instanceId}/${uuid}`
               )
             );
           }
