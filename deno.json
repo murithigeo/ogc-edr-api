@@ -1,5 +1,5 @@
 {
-  "name": "murithigeo-ogc-edr-ref",
+  "name": "ogc-edr-api",
   "version": "0.0.1",
   "tasks": {
     "dev": "deno run -A --watch-hmr --env-file index.ts"
