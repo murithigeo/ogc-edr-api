@@ -7,7 +7,7 @@ import type {
   Extent as Ext,
   Feature,
   FeatureCollection,
-} from "./utils/index.ts";
+} from "./utils/types.d.ts";
 import type { I18N, Parameter as PR } from "coveragejson";
 import type { Length } from "convert";
 
@@ -187,11 +187,8 @@ export interface MeasurementTypeObject {
    * the value is representative of the period 2020-04-05T14:30Z/2020-04-05T14:40Z
    * @warning this member is required per the docs but is not present in the examples. Period appears instead
    */
-  duration?: string;
-  /**
-   * @description Descriptor for length of measurement. Explicit definition not provided but is used extensively in the guideline
-   */
   period?: string;
+  
 }
 
 declare module "exegesis-express" {

@@ -12,12 +12,13 @@ async function getItemsAtCollection(ctx: ExegesisContext) {
     options.output_formats || dataset.output_formats
   );
   const doc = await options.handleAll({ ...ctx["ectx"] });
-  const { links } = new Links(ctx).self().alternates(output_formats);
+  const { links } = new Links(ctx).self().alternates(output_formats).ws(`/collections/${dataset.id}/items`);
   ctx.res.status(200).setBody({ ...doc, links });
 }
 
 async function getItemAtCollection(ctx: ExegesisContext) {
   const dataset: Dataset = ctx["ectx"].dataset;
+  const { itemId } = ctx.params.path;
   const options = dataset.data_queries.items!;
   const { output_formats } = parseformat(
     ctx,
@@ -26,9 +27,10 @@ async function getItemAtCollection(ctx: ExegesisContext) {
   );
   const doc = await options.handleOne({
     ...ctx["ectx"],
-    itemId: ctx.params.path.itemId,
+    itemId
   });
-  const { links } = new Links(ctx).self().alternates(output_formats);
+  const { links } = new Links(ctx).self().alternates(output_formats).ws
+    (`/collections/${dataset.id}/items/${itemId}`);
   ctx.res.status(200).setBody({ ...doc, links });
 }
 async function getItemsAtInstance(ctx: ExegesisContext) {
@@ -42,12 +44,13 @@ async function getItemsAtInstance(ctx: ExegesisContext) {
   const doc = await options.handleAll({
     ...ctx["ectx"],
   });
-  const { links } = new Links(ctx).self().alternates(output_formats);
+  const { links } = new Links(ctx).self().alternates(output_formats).ws(`/collections/${dataset.id}/instances/${ctx.params.path.instanceId}/items`);
   ctx.res.status(200).setBody({ ...doc, links });
 }
 
 async function getItemAtInstance(ctx: ExegesisContext) {
   const dataset: Dataset = ctx["ectx"].dataset;
+  const { itemId, instanceId } = ctx.params.path;
   const options = dataset.data_queries.items!;
   const { output_formats } = parseformat(
     ctx,
@@ -56,9 +59,10 @@ async function getItemAtInstance(ctx: ExegesisContext) {
   );
   const doc = await options.handleOne({
     ...ctx["ectx"],
-    itemId: ctx.params.path.itemId,
+    itemId
   });
-  const { links } = new Links(ctx).self().alternates(output_formats);
+  const { links } = new Links(ctx).self().alternates(output_formats).ws
+    (`/collections/${dataset.id}/instances/${instanceId}/items/${itemId}`);
   ctx.res.status(200).setBody({ ...doc, links });
 }
 

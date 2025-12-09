@@ -1,7 +1,6 @@
 import {
   bboxPolygon,
   CRS84,
-  datetimeFilter,
   elevationFilter,
   type Feature,
   geometryIntersects,
@@ -14,14 +13,22 @@ import { HttpError } from "exegesis";
 import { corridorFilter, radiusFilter } from "./filters.ts";
 import mountains from "./mountains.json" with { type: "json" };
 
-const features:Array<Feature> = mountains.features
+const features: Array<Feature<GeoJSON.Point, {
+  feet: number;
+  meters: number;
+  name: string;
+  regions: string[] | null;
+  states: string[] | null;
+  countries: string[];
+  continent: string;
+}>> = mountains.features
   .map((p) => ({
     ...p,
     properties: { ...p.properties, countries: p.properties.countries || [] },
   }))
   .sort((a, b) =>
     a.properties.name.localeCompare(b.properties.name)
-  ) ;
+  );
 
 export default {
   id: "mountains",
@@ -32,7 +39,7 @@ export default {
   keywords: ["features"],
   parameters: [],
   getExtent() {
-    return {
+    return Promise.resolve({
       id: this.id,
       spatial: {
         bbox: [bbox({ type: "FeatureCollection", features })],
@@ -43,7 +50,7 @@ export default {
         values: features.map((f) => f.properties.meters),
       },
       temporal: null,
-    };
+    });
   },
 
   data_queries: {
@@ -72,22 +79,26 @@ export default {
           timeStamp: new Date().toISOString(),
           numberMatched: length,
           numberReturned: numberReturned(length, length, 0),
-          features: Object.entries(matched).map(([id, features]) => ({...bboxPolygon(
+          features: Object.entries(matched).map(([id, features]) => ({
+            ...bboxPolygon(
               bbox({ type: "FeatureCollection", features: features! })
-            ),id}))
+            ), id
+          }))
         });
       },
       handlerOne(opts) {
+        const featuresByInstance = features.filter(instanceIdChecker(opts.instanceId));
+
         const allIds = Array.from(
-          new Set(features.flatMap((p) => p.properties.countries)),
+          new Set(featuresByInstance.flatMap((p) => p.properties.countries)),
         );
         const activeIds = opts.locationId.split(",");
         const invalidIds = activeIds.filter((id) => !allIds.includes(id));
         if (invalidIds.length > 0) throw new HttpError(404, "Invalid locId");
         const matched = features
-          .filter(instanceIdChecker(opts.instanceId))
+          // .filter(instanceIdChecker(opts.instanceId))
           .filter((feature) =>
-            allIds.some((id) => feature.properties.countries.includes(id))
+            activeIds.some((id) => feature.properties.countries.includes(id))
           );
 
         let str = "/collections/features";
@@ -122,7 +133,7 @@ export default {
       allowAt: ["collection", "instance"],
 
       handler(opts) {
-        return Object.entries(
+        return Promise.resolve(Object.entries(
           Object.groupBy(
             features
               .filter((c) => c.properties.continent !== null)
@@ -140,7 +151,7 @@ export default {
             vrs: CRS84,
             values: catValues!.map((f) => f.properties.meters),
           },
-        }));
+        })));
       },
     },
     items: {
@@ -197,7 +208,7 @@ export default {
       handler(opts) {
         const matched = features
           .filter(instanceIdChecker(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime))
+          // .filter(datetimeFilter(opts.datetime)())
           .filter(elevationFilter(opts.z, "meters"))
           .filter(geometryIntersects(opts.coords));
 
@@ -218,7 +229,7 @@ export default {
       handler(opts) {
         const matched = features
           .filter(instanceIdChecker(opts.instanceId))
-          .filter(datetimeFilter(opts.datetime))
+          // .filter(datetimeFilter(opts.datetime))
           .filter(elevationFilter(opts.z, "meters"))
           .filter(radiusFilter(opts.coords, opts.within));
         return Promise.resolve({

@@ -5,7 +5,7 @@ import { parseformat, Links } from "../utils/index.ts";
 function getConformance(ctx: ExegesisContext): void {
   const { output_formats } = parseformat(ctx, "JSON", ["JSON"]);
   const conformanceDoc: ConformancePage = {
-    conformsTo: [
+    conformsTo: Array.from(new Set([
       "http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/collections",
       "http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/core",
       "http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/core",
@@ -17,7 +17,7 @@ function getConformance(ctx: ExegesisContext): void {
       "http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/queries",
       "http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/edr-geojson",
       "http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/geojson",
-    ],
+    ])),
     links: new Links(ctx).self().alternates(output_formats).links,
   };
   ctx.res

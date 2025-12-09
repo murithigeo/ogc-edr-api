@@ -1,0 +1,235 @@
+asyncapi: 3.0.0
+info:
+  title: Part 2 Publish/Subscribe Workflow
+  version: 0.0.1
+  description: An extension to EDR APIs allowing clients to be notified of updates to datasets
+  termsOfService: https://asyncapi.org/terms/
+  contact:
+    name: Edwin Gichuru
+    url: https://murithigeo.vercel.app
+    email: murithiedwing@gmail.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  externalDocs:
+    description: Find more info here
+    url: https://www.asyncapi.org
+
+defaultContentType: application/json
+servers:
+  development:
+    host: localhost:3000
+    protocol: ws
+  production:
+    host: ogc-edr-api.murithigeo.deno.net
+    protocol: ws
+channels:
+  notify-collections:
+    address: /collections
+    messages:
+      collection-msg:
+        $ref: "#/components/messages/collection-msg"
+  notify-collection:
+    address: /collections/{collectionId}
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+    messages:
+      collection-msg:
+        $ref: "#/components/messages/collection-msg"
+
+  notify-collection-instances:
+    address: /collections/{collectionId}/instances
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+    messages:
+      instance-msg:
+        $ref: "#/components/messages/collection-msg"
+  notify-collection-instance:
+    address: /collections/{collectionId}/instances/{instanceId}
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+      instanceId:
+        $ref: "#/components/parameters/instanceId"
+    messages:
+      instance-msg:
+        $ref: "#/components/messages/collection-msg"
+
+  notify-collection-items:
+    address: /collections/{collectionId}/items
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+    messages:
+      item-msg:
+        $ref: "#/components/messages/item-msg"
+
+  notify-collection-item:
+    address: /collections/{collectionId}/items/{itemId}
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+      itemId:
+        $ref: "#/components/parameters/itemId"
+    messages:
+      item-msg:
+        $ref: "#/components/messages/item-msg"
+
+  notify-collection-instance-items:
+    address: /collections/{collectionId}/instances/{instanceId}/items
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+      instanceId:
+        $ref: "#/components/parameters/instanceId"
+    messages:
+      item-msg:
+        $ref: "#/components/messages/item-msg"
+
+  notify-collection-instance-item:
+    address: /collections/{collectionId}/instances/{instanceId}/items/{itemId}
+    parameters:
+      collectionId:
+        $ref: "#/components/parameters/collectionId"
+      itemId:
+        $ref: "#/components/parameters/itemId"
+      instanceId:
+        $ref: "#/components/parameters/instanceId"
+    messages:
+      item-msg:
+        $ref: "#/components/messages/collection-msg"
+operations:
+  notify-collections:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collections"
+  notify-collection:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection"
+  notify-collection-instances:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection-instances"
+  notify-collection-instance:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection-instance"
+  notify-collection-items:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection-items"
+  notify-collection-item:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection-item"
+  notify-collection-instance-items:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection-instance-items"
+  notify-collection-instance-item:
+    action: receive
+    channel:
+      $ref: "#/channels/notify-collection-instance-item"
+components:
+  parameters:
+    collectionId:
+      description: An unique identifier for a collection
+    itemId:
+      description: An unique identifier for an item in a collection
+    instanceId:
+      description: An unique identifier for a subset of a collection
+  messages:
+    collection-msg:
+      description: An object denoting an affected collection
+      payload:
+        $ref: "#/components/schemas/CollectionPayload"
+    item-msg:
+      description: An affected GeoJSON Item
+      payload:
+        $ref: "#/components/schemas/GeoJSONPayload"
+
+  schemas:
+    MultiPoint:
+      $ref: "https://geojson.org/schema/MultiPoint.json"
+    Point:
+      $ref: "https://geojson.org/schema/Point.json"
+    Feature:
+      $ref: "https://geojson.org/schema/Feature.json"
+    LineString:
+      $ref: "https://geojson.org/schema/LineString.json"
+    MultiLineString:
+      $ref: "https://geojson.org/schema/MultiLineString.json"
+    Polygon:
+      $ref: "https://geojson.org/schema/Polygon.json"
+    MultiPolygon:
+      $ref: "https://geojson.org/schema/MultiPolygon.json"
+    FeatureCollection:
+      $ref: "https://geojson.org/schema/FeatureCollection.json"
+    GeometryCollection:
+      $ref: "https://geojson.org/schema/GeometryCollection.json"
+    Link:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri-reference
+        type:
+          type: string
+        rel:
+          type: string
+        title:
+          type: string
+    GeoJSONPayload:
+      allOf:
+        - $ref: "#/components/schemas/Feature"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            properties:
+              type: object
+              required:
+                - pubtime
+                - operation
+                - id
+              additionalProperties: true
+              properties:
+                id:
+                  type: string
+                  description: The unique id of the item
+                pubtime:
+                  type: string
+                  format: date-time
+                operation:
+                  type: string
+                  enum:
+                    - create
+                    - delete
+                    - update
+            links:
+              type: array
+              items:
+                $ref: "#/components/schemas/Link"
+    CollectionPayload:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        collectionId:
+          type: string
+        instanceId:
+          type: string
+        pubtime:
+          type: string
+          format: date-time
+        operation:
+          type: string
+          enum:
+            - create
+            - update
+            - delete

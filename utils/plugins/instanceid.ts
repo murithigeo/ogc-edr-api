@@ -11,12 +11,12 @@ export default function instanceid(): ExegesisPlugin {
         const dataset: Dataset = ctx["ectx"]["dataset"];
         const options = dataset.data_queries.instances!;
         const instanceId = params.path.instanceId || options.default_instanceid;
-        const matchedInstance = options.handler({
+        const matchedInstance = (await options.handler({
           format: "JSON",
-          instanceId: instanceId,
+          instanceId,
           crs: ctx["ectx"]["crs"],
           server: ctx.api.serverObject?.url!,
-        })[0];
+        })).find(e => e.id === instanceId);
         if (!matchedInstance) {
           throw ctx.makeError(404, `dataset does not have such an instance`);
         }

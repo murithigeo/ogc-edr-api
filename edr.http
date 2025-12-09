@@ -1,9 +1,10 @@
 @SERVER=http://localhost:3000
 @crs=crs=http://www.opengis.net/def/crs/EPSG/0/4326
-@collectionId=fapar-anomaly
-@instanceId=Africa
+@collectionId=openmeteo-hourly
+@instanceId=2025-12-01T00:00
 @itemId=64658099999
 @f=geojson
+
 ### 
 GET {{SERVER}}/
 
@@ -20,7 +21,7 @@ GET {{SERVER}}/api.html
 GET {{SERVER}}/collections?f=yaml
 
 ###
-GET {{SERVER}}/collections/nighttimelight
+GET {{SERVER}}/collections/{{collectionId}}
 
 ###
 GET {{SERVER}}/collections/{{collectionId}}/position
@@ -34,7 +35,7 @@ Content-Type: application/json
     
     {
         "coords":"{{point}}",
-        "parameter-name":"{{parameter-name}}"
+        "parameter-name":["temperature_2m"]
     }
 
 ###
@@ -42,16 +43,16 @@ GET {{SERVER}}/collections/{{collectionId}}/radius
     ?coords=POINT(-0.15 37.3)
     &within=200
     &within-units=meters
-    &crs=EPSG:4326
+    &crs=OGC:CRS84
 ###
 POST {{SERVER}}/collections/{{collectionId}}/radius
 Content-Type: application/json
 
 {
-    "coords":"POINT(36 1)",
+    "coords":"{{point}}",
     "within-units":"meters",
-    "within":1000,
-    "parameter-name":["vegetationindex"]
+    "within":900000,
+    "parameter-name":["temperature_2m"]
 }
 
 ###
@@ -115,6 +116,7 @@ GET {{SERVER}}/collections/{{collectionId}}/cube
     ?bbox=-180,-90,180,90
     &f={{f}}
     &parameter-name={{parameter-name}}
+    &datetime=2025-12-01T13:00
 
 ###
 POST {{SERVER}}/collections/{{collectionId}}/cube
@@ -146,11 +148,11 @@ GET {{SERVER}}/collections/{{collectionId}}/locations/{{locationId}}
     &f={{f}}
 
 ###
-GET {{SERVER}}/collections/fapar-anomaly/instances
+GET {{SERVER}}/collections/{{collectionId}}/instances
         ?bbox=-53.1546130%2C-176.1764470%2C74.6335530%2C179.3666670
 
 ###
-GET {{SERVER}}/collections/fapar-anomaly/instances/2025-05-21
+GET {{SERVER}}/collections/{{collectionId}}/instances/2025-12-01T00:00
 
 ###
 GET {{SERVER}}/collections/{{collectionId}}/instances/{{instanceId}}/locations
@@ -232,10 +234,9 @@ GET {{SERVER}}/collections/{{collectionId}}/instances/{{instanceId}}/locations/{
 @linestringzm=LINESTRING ZM(-2.87 51.14 0.1 1560507000,-2.98 51.36 0.2 1560507600,-3.15 51.03 0.3 1560508200, -3.48 50.74 0.4 1560508500, -3.36 50.9 0.5 1560510240)
 @polygon=POLYGON((-6.1 50.3,-4.35 51.4,-2.6 51.6,-2.8 50.6,-5.3 49.9,-6.1 50.3))
 @multipoint=MULTIPOINT ((-2.87 51.14),(-2.98 51.36),(-3.15 51.03),(-3.48 50.74),(-3.36 50.9))
-@parameter-name=dewPointTemperature,temperature,pressure,windDirection,windSpeed,windType
+@parameter-name=temperature_2m
 @crs84=http://www.opengis.net/def/crs/OGC/1.3/CRS84
 @EPSG:4326=http://www.opengis.net/def/crs/EPSG/0/4326
 @crs84h=http://www.opengis.net/def/crs/OGC/0/CRS84h
 @EPSG:32737=http://www.opengis.net/def/crs/EPSG/0/32737
-@point=36.82 1.29
-@parameterNameArray={{parameter-name}}.split(',')}
+@point=POINT(36.82 1.29)

@@ -112,7 +112,6 @@ paths:
               schema:
                 type: string
 
-  ##!Work around for invalid path request
   /conformance/:
     x-exegesis-controller: conformancecontroller
     get:
@@ -148,7 +147,6 @@ paths:
             text/yaml:
               schema:
                 type: string
-
   /api:
     x-exegesis-controller: apicontroller
     get:
@@ -169,7 +167,6 @@ paths:
             text/yaml:
               schema:
                 type: string
-
   /api.html:
     x-exegesis-controller: apicontroller
     get:
@@ -184,7 +181,31 @@ paths:
             text/html:
               schema:
                 type: string
-
+  /asyncapi:
+    x-exegesis-controller: apicontroller
+    get:
+      x-exegesis-operationId: getAsyncDesc
+      tags:
+        - Capabilities
+        - Service Metadata
+      responses:
+        "200":
+          description: Ok.
+          content:
+            application/json:
+              schema:
+                type: object
+  /asyncapi.html:
+    x-exegesis-controller: apicontroller
+    get:
+      x-exegesis-operationId: getAsyncDoc
+      responses:
+        "200":
+          description: Ok.
+          content:
+            text/html:
+              schema:
+                type: string
   /collections:
     x-exegesis-controller: collectionscontroller
     get:
@@ -253,7 +274,7 @@ paths:
       parameters:
         ###! MISSING QUERY PARAMS
         - $ref: "#/components/parameters/collectionId"
-        - $ref: "#/components/parameters/datetime"
+        #- $ref: "#/components/parameters/datetime"
         - $ref: "#/components/parameters/f"
       responses:
         "200":
@@ -720,6 +741,7 @@ paths:
         - $ref: "#/components/parameters/f"
         - $ref: "#/components/parameters/crs"
         - $ref: "#/components/parameters/datetime"
+        - $ref: "#/components/parameters/parameter-name"
       responses:
         "200":
           $ref: "#/components/responses/covJson_edrGeoJson_yaml"

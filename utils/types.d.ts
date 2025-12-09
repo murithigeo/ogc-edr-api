@@ -6,6 +6,7 @@ export type Link = {
   length?: string;
   templated?: boolean;
   type?: string;
+  channel?: string;
 };
 
 export type LandingPage = {

@@ -9,14 +9,17 @@ import config, {
 import { Links } from "../links.ts";
 import { stringify } from "yaml";
 
-function getCollections(ctx: ExegesisContext) {
+async function getCollections(ctx: ExegesisContext) {
   const { format, output_formats } = parseformat(ctx, "JSON", ["JSON", "YAML"]);
   const doc: { collections: Array<Collection>; links: Array<Link> } = {
-    collections: config.datasets.map((p) => {
-      ctx.params.path.collectionId = p.id;
-      return asCollection(ctx, p, p.getExtent());
-    }),
-    links: new Links(ctx).self().alternates(output_formats).links,
+    collections: await Promise.all(
+      config.datasets.map(async (p) => {
+        ctx.params.path.collectionId = p.id;
+        return asCollection(ctx, p, await p.getExtent());
+      })
+    ),
+    links: new Links(ctx).self().alternates(output_formats).ws("/collections")
+      .links,
   };
   let data;
   switch (format) {
@@ -29,14 +32,17 @@ function getCollections(ctx: ExegesisContext) {
   }
   ctx.res.status(200).setBody(data);
 }
-function getCollection(ctx: ExegesisContext) {
+async function getCollection(ctx: ExegesisContext) {
   const { format, output_formats } = parseformat(ctx, "JSON", ["JSON", "YAML"]);
   const dataset: Dataset = ctx["ectx"].dataset;
-  let doc = asCollection(ctx, dataset, dataset.getExtent());
+  let doc = asCollection(ctx, dataset, await dataset.getExtent());
   doc = {
     ...doc,
     links: doc.links.concat(
-      new Links(ctx).self().alternates(output_formats).links
+      new Links(ctx)
+        .self()
+        .alternates(output_formats)
+        .ws(`/collections/${ctx.params.path.collectionId}`).links
     ),
   };
   let data;
@@ -50,7 +56,7 @@ function getCollection(ctx: ExegesisContext) {
   ctx.res.status(200).setBody(data);
 }
 
-function getInstances(ctx: ExegesisContext) {
+async function getInstances(ctx: ExegesisContext) {
   const dataset: Dataset = ctx["ectx"].dataset;
   const options = dataset.data_queries.instances!;
   const { format, output_formats } = parseformat(
@@ -58,12 +64,24 @@ function getInstances(ctx: ExegesisContext) {
     options.default_output_format,
     options?.output_formats || dataset.output_formats
   );
-  const values = options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" });
-  const instances = values.map((value) => {
-    ctx.params.path.instanceId = value.id;
-    return asCollection(ctx, { ...dataset, id: value.id }, value);
-  });
-  const { links } = new Links(ctx).self().alternates(output_formats);
+  const values = await options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" });
+  const instances = values
+    .map((value) => {
+      ctx.params.path.instanceId = value.id;
+      return asCollection(ctx, { ...dataset, id: value.id }, value);
+    })
+    .map((e) => ({
+      ...e,
+      links: e.links.concat(new Links(ctx).instance(dataset.id, e.id).links),
+    }));
+  const links = instances
+    .flatMap((e) => e.links)
+    .concat(
+      new Links(ctx)
+        .self()
+        .alternates(output_formats)
+        .ws(`/collections/${dataset.id}/instances`).links
+    );
   const doc = {
     instances,
     links,
@@ -82,7 +100,7 @@ function getInstances(ctx: ExegesisContext) {
   ctx.res.status(200).setBody(data);
 }
 
-function getInstance(ctx: ExegesisContext) {
+async function getInstance(ctx: ExegesisContext) {
   const dataset: Dataset = ctx["ectx"].dataset;
   const options = dataset.data_queries.instances!;
   const { format, output_formats } = parseformat(
@@ -90,14 +108,14 @@ function getInstance(ctx: ExegesisContext) {
     options.default_output_format!,
     options.output_formats!
   );
-  const res = options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" })[0];
+  const res = (await options.handler({ ...ctx["ectx"], crs: "OGC:CRS84" }))[0];
   const doc = asCollection(
     ctx,
     { ...dataset, id: ctx.params.path.instanceId },
     res
   );
   doc.links = doc.links.concat(
-    new Links(ctx).self().alternates(output_formats).links
+    new Links(ctx).self().alternates(output_formats).ws(`/collections/${dataset.id}/instances/${doc.id}`).links
   );
   let data;
   switch (format) {
@@ -145,23 +163,23 @@ function toExtent(props: ExtentProps): Extent {
     },
     vertical: props.vertical
       ? {
-          interval:
-            props.vertical.values === null
-              ? [[null, null]]
-              : [
-                  [
-                    props.vertical.values[0].toString(),
-                    props.vertical.values[
-                      props.vertical.values?.length - 1
-                    ].toString(),
-                  ],
-                ],
-          values:
-            props.vertical.values === null
-              ? null
-              : props.vertical.values.map((p) => p.toString()) || null,
-          vrs: props.vertical.vrs,
-        }
+        interval:
+          props.vertical.values === null
+            ? [[null, null]]
+            : [
+              [
+                props.vertical.values[0].toString(),
+                props.vertical.values[
+                  props.vertical.values?.length - 1
+                ].toString(),
+              ],
+            ],
+        values:
+          props.vertical.values === null
+            ? null
+            : props.vertical.values.map((p) => p.toString()) || null,
+        vrs: props.vertical.vrs,
+      }
       : undefined,
   };
 }

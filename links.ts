@@ -1,28 +1,40 @@
 import { contenttypes, type Link, Links as Links_ } from "./utils/index.ts";
 import type { ExegesisContext } from "exegesis-express";
-
 export class Links extends Links_ {
   constructor(ctx: ExegesisContext) {
     super(ctx);
   }
   public instances(collectionId: string): this {
+    const channel = `/collections/${collectionId}/instances`;
+    let url = new URL(this.server + channel);
     this.links.push({
-      title: "View Instance",
-      href: new URL(
-        `${this.server}/collections/${collectionId}/instances`
-      ).toJSON(),
+      title: "Discover instances within this dataset",
+      href: url.toString(),
       rel: "data",
       type: contenttypes.JSON,
+    });
+
+    return this;
+  }
+  ws(channel: string,type=contenttypes.JSON): this {
+    this.links.push({
+      title: "Subscribe to realtime updates for this resource",
+      href: this.server,
+      rel: "hub",
+      channel,
+      type
     });
     return this;
   }
 
+  
   instance(collectionId: string, instanceId: string): this {
+    let title = "View metadata about instance";
+    const channel = `/collections/${collectionId}/instances/${instanceId}`;
+    let url = new URL(this.server + channel);
     this.links.push({
-      title: "Instance",
-      href: new URL(
-        `${this.server}/collections/${collectionId}/instances/${instanceId}`
-      ).toJSON(),
+      title,
+      href: url.toJSON(),
       rel: "collection",
       type: contenttypes.JSON,
     });
@@ -45,7 +57,6 @@ export class Links extends Links_ {
       templated: false,
     };
   }
-
   location(
     collectionId: string,
     locationId: string,

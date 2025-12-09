@@ -126,6 +126,7 @@ export default {
           parameters: {
             [viParameter.id]: {
               type: "Parameter",
+              
               ...vi,
             },
           },
