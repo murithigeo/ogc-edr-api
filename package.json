@@ -1,5 +1,5 @@
 {
-  "name": "@murithigeo/ogc-edr-api",
+  "name": "murithigeo-ogc-edr-ref",
   "type": "module",
   "scripts": {
     "test": "vitest",
