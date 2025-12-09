@@ -35,7 +35,7 @@ Content-Type: application/json
     
     {
         "coords":"{{point}}",
-        "parameter-name":"{{parameter-name}}"
+        "parameter-name":["temperature_2m"]
     }
 
 ###
@@ -43,7 +43,7 @@ GET {{SERVER}}/collections/{{collectionId}}/radius
     ?coords=POINT(-0.15 37.3)
     &within=200
     &within-units=meters
-    &crs=EPSG:4326
+    &crs=OGC:CRS84
 ###
 POST {{SERVER}}/collections/{{collectionId}}/radius
 Content-Type: application/json

@@ -1,6 +1,6 @@
 import type { Feature } from "../../utils/types.d.ts";
 import type { Dataset } from "../index.ts";
-import stats from "./stations.json" with { type: 'json' };
+import stations from "./stations.ts";
 import {
   bbox,
   bboxPolygon,
@@ -12,7 +12,13 @@ import {
 } from "../../utils/index.ts";
 import units from "../units.ts";
 import observedproperties from "../observedproperties.ts";
-import db from "../../asyncapi/db.ts";
+import {
+  CollectionMessagesArg,
+  db,
+  GenericMessageArg,
+  InstanceMessagesArg,
+  ItemMessagesArg,
+} from "../../asyncapi/firebase.ts";
 import { setHours, setMinutes } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import type { EdrFeature, MeasurementTypeObject } from "../../types.d.ts";
@@ -23,55 +29,48 @@ import buffer from "@turf/buffer";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-class Observations {
+class Obs {
+  //stationId-datetime-Props
+  database = new Map<
+    string,
+    { [stationId: string]: Omit<ValueType, "index"> & { stationId: string } }
+  >();
   constructor() {}
 
   async newObservation(
-    observation: ValueType & { datetime: string; index: number },
-    expireIn = DAY_IN_MS
+    obs: ValueType & { datetime: string; feature: (typeof features)[0] }
   ) {
-    const {
-      geometry,
-      properties: { stationId: itemId },
-    } = features[observation.index];
+    const { feature, ...props } = obs;
+    const { stationId } = feature.properties;
 
-    await db.newItemMessage(
-      {
-        itemId,
-        geometry,
-        collectionId,
-        instanceId: observation.datetime,
-        operation: "create",
-      },
-      expireIn
-    );
-    const { datetime, index: _, ...props } = observation;
-    await db.db.set(["data", collectionId, itemId, datetime], props, {
-      expireIn,
+    if (!this.database.has(props.datetime)) {
+      this.database.set(obs.datetime, {});
+    }
+    this.database.set(props.datetime, {
+      ...this.database.get(obs.datetime),
+      [stationId]: { ...props, stationId },
     });
   }
-  async getObservations(stationId: string, dates: string[]) {
-    const primaryKeys = ["data", collectionId, stationId];
-    const arr = await Array.fromAsync(
-      db.db.list<ValueType>({ prefix: primaryKeys }, {})
-    );
-    return arr
-      .filter((e) => datetimeFilter({ values: dates })(e.key[3] as string))
-      .map((e) => ({ date: e.key[3] as string, ...e.value }));
+  async getObservations(dates: string[], stationId: string) {
+    //Get keys included in args
+    const dates2 = this.database
+      .keys()
+      .filter(datetimeFilter({ values: dates }))
+      .toArray();
+
+    // Get values for those keys
+    const values = dates2.map((e) => this.database.get(e));
+
+    const valuesByStationId = values.map((e) => e[stationId]);
+    return valuesByStationId;
+  }
+  public get dates() {
+    return this.database.keys().toArray();
   }
 }
-const observations = new Observations();
-const features: Feature<
-  GeoJSON.Point,
-  {
-    stationId: string;
-    stationName: string;
-    country: "Kenya" | "Tanzania";
-    elevation: number;
-  }
->[] = stats.features.sort((a, b) =>
-  a.properties.stationName.localeCompare(b.properties.stationName)
-);
+
+const observations = new Obs();
+const features = stations.features;
 
 const [collectionId, measurementType]: [string, MeasurementTypeObject] = [
   "openmeteo-hourly",
@@ -149,7 +148,7 @@ const _bbox = bbox({ type: "FeatureCollection", features });
 export default {
   id: collectionId,
   description:
-    "Hourly Temperature sourced from open-meteo.com. This collection is intended to demonstrate Part 2: Publish/Subscribe Workflow using WebSocket",
+    "Hourly Temperature sourced from open-meteo.com. This collection is intended to demonstrate Part 2: Publish/Subscribe Workflow using WebSockets",
   crs: [
     "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
     "http://www.opengis.net/def/crs/EPSG/0/4326",
@@ -163,7 +162,7 @@ export default {
       // Start of Current Hour
       default_instanceid: iso2dt(new Date()),
       handler: async () => {
-        return (await getDates()).map((id) => ({
+        return observations.dates.map((id) => ({
           id,
           temporal: [id],
           spatial: {
@@ -182,7 +181,7 @@ export default {
       default_output_format: "JSON",
       output_formats: ["JSON", "GEOJSON"],
       async handleAll(opts) {
-        const date = (await getDates()).find(datetimeFilter(opts.datetime));
+        const date = observations.dates.find(datetimeFilter(opts.datetime));
 
         const matched = await Promise.all(
           features
@@ -192,14 +191,7 @@ export default {
               properties: {
                 ...p.properties,
                 datetime: date,
-                ...(
-                  await db.db.get<ValueType>([
-                    "data",
-                    collectionId,
-                    date,
-                    p.properties.stationId,
-                  ])
-                ).value,
+                ...observations.database.get(date)[p.properties.stationId],
               },
             }))
 
@@ -221,7 +213,7 @@ export default {
         });
       },
       handleOne: async (opts) => {
-        const date = (await getDates()).find(instanceIdFilter(opts.instanceId));
+        const date = observations.dates.find(instanceIdFilter(opts.instanceId));
         const feature = features.find(
           (c) => c.properties.stationId === opts.itemId
         );
@@ -238,12 +230,7 @@ export default {
               ...feature,
               properties: {
                 ...feature.properties,
-                ...(await db.db.get<ValueType>([
-                  "data",
-                  collectionId,
-                  date,
-                  feature.properties.stationId,
-                ])),
+                ...observations.database.get(date)[opts.itemId],
               },
             })
           )
@@ -274,7 +261,7 @@ export default {
         });
       },
       handlerOne: async (opts) => {
-        const dates = (await getDates())
+        const dates = observations.dates
           .filter(instanceIdFilter(opts.instanceId))
           .filter(datetimeFilter(opts.datetime));
         return Promise.resolve({
@@ -291,7 +278,7 @@ export default {
       default_output_format: "COVERAGEJSON",
       allowAt: ["instance", "collection"],
       handler: async (opts) => {
-        const dates = (await getDates())
+        const dates = observations.dates
           .filter(instanceIdFilter(opts.instanceId))
           .filter(datetimeFilter(opts.datetime));
 
@@ -312,7 +299,7 @@ export default {
       default_output_format: "COVERAGEJSON",
       allowAt: ["instance", "collection"],
       async handler(opts) {
-        const dates = (await getDates())
+        const dates = observations.dates
           .filter(instanceIdFilter(opts.instanceId))
           .filter(datetimeFilter(opts.datetime));
 
@@ -334,7 +321,7 @@ export default {
       allowAt: ["instance", "collection"],
       within_units: ["m", "meters", "kilometers"],
       async handler(opts) {
-        const dates = (await getDates())
+        const dates = observations.dates
           .filter(instanceIdFilter(opts.instanceId))
           .filter(datetimeFilter(opts.datetime));
         const bufferD = buffer(opts.coords, opts.within, { units: "meters" })!;
@@ -351,7 +338,6 @@ export default {
         });
       },
     },
-    
   },
   async getExtent() {
     return Promise.resolve({
@@ -360,7 +346,7 @@ export default {
         bbox: [bbox({ type: "FeatureCollection", features })],
         crs: "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
       },
-      temporal: await getDates(),
+      temporal: observations.database.keys().toArray(),
       vertical: {
         values: features.map((p) => p.properties.elevation),
         vrs: "OGC:CRS84",
@@ -407,32 +393,47 @@ type Res = {
 
 async function retrieveAndSetObservations(url: URL) {
   try {
+    // let [itemMessages,instanceMessages,collMessages]=[,[],[]]
+    const itemMessages: ItemMessagesArg = [];
+    const instanceMessages: InstanceMessagesArg = [];
+    const collectionMessages: CollectionMessagesArg = [];
+
     const res = await fetch(url);
     const data: Res[] = await res.json();
     const dates = Array.from(new Set(data.flatMap((p) => p.hourly.time)));
 
     for (let datetimeIndex = 0; datetimeIndex < dates.length; datetimeIndex++) {
-      for (let index = 0; index < data.length; index++) {
-        const datetime = dates[datetimeIndex];
-        const values = await db.db.get<CacheValue | null>([
-          "data",
-          collectionId,
-          datetime,
-        ]);
-        await db.newCollectionMessage({
+      // Avoid clogging up resources. Only signal creation of instance and final update
+      if (datetimeIndex === 0) {
+        collectionMessages.push({
           collectionId,
           operation: "update",
         });
-        if (!values.value)
-          await db.newInstanceMessage({
-            collectionId,
-            instanceId: datetime,
-            operation: "create",
-          });
-
+      }
+      instanceMessages.push({
+        collectionId,
+        operation: "create",
+        instanceId: dates[datetimeIndex],
+      });
+      if (datetimeIndex === dates.length - 1) {
+        collectionMessages.push({
+          collectionId,
+          operation: "update",
+        });
+      }
+      for (let index = 0; index < data.length; index++) {
+        const datetime = dates[datetimeIndex];
+        const feature = features[index];
+        itemMessages.push({
+          itemId: feature.properties.stationId,
+          geometry: feature.geometry,
+          collectionId,
+          instanceId: datetime,
+          operation: "create",
+        });
         await observations.newObservation({
           datetime,
-          index,
+          feature,
           dewpoint_2m: data[index].hourly.dewpoint_2m[datetimeIndex],
           temperature_2m: data[index].hourly.temperature_2m[datetimeIndex],
           winddirection_10m:
@@ -441,6 +442,12 @@ async function retrieveAndSetObservations(url: URL) {
         });
       }
     }
+
+    await db
+      .newCollectionMessages(collectionMessages)
+      .newInstanceMessages(instanceMessages)
+      .newItemMessages(itemMessages)
+      .commitMessages();
   } catch (error) {
     console.log(`error querying open-meteo`);
     console.error(error);
@@ -488,10 +495,10 @@ function feature2coverage(parameterNames: string[], dates: string[]) {
     feature: (typeof features)[0]
   ): Promise<Coverage<PointSeries>> => {
     const observation = await observations.getObservations(
-      feature.properties.stationId,
-      dates
+      dates,
+      feature.properties.stationId
     );
-
+    console.log(observation);
     const coverage: Coverage<PointSeries> = {
       type: "Coverage",
       id: feature.properties.stationId,
@@ -502,7 +509,7 @@ function feature2coverage(parameterNames: string[], dates: string[]) {
           x: { values: [feature.geometry.coordinates[0]] },
           y: { values: [feature.geometry.coordinates[1]] },
           z: { values: [feature.properties.elevation] },
-          t: { values: observation.map((e) => e.date) },
+          t: { values: dates },
         },
       },
       ranges: {},
@@ -510,6 +517,7 @@ function feature2coverage(parameterNames: string[], dates: string[]) {
 
     for (const parameter of parameters) {
       if (!parameterNames.includes(parameter.id)) continue;
+
       const values: number[] = observation.map((p) => p[parameter.id]);
       coverage.ranges[parameter.id] = {
         type: "NdArray",
@@ -521,17 +529,44 @@ function feature2coverage(parameterNames: string[], dates: string[]) {
   };
 }
 
+// TODO: Make the timezone in the resulting map key explicit
 function iso2dt(date: Date | number) {
   let date_ = new Date(date);
   date_ = setMinutes(date_, 0);
   return formatInTimeZone(date_, "Africa/Nairobi", "yyyy-MM-dd'T'HH:mm");
 }
 
-async function getDates() {
-  const values = await Array.fromAsync(
-    db.db.list<ValueType>({ prefix: ["data", collectionId] })
-  );
-  //@ts-expect-error type mismatch
-  return Array.from<string>(new Set(values.map((e) => e.key[3])));
-}
+// Delete values on 24 hours lapse
+setInterval(async () => {
+  let itemMessages: ItemMessagesArg = [];
+  let instanceMessages: InstanceMessagesArg = [];
+  for (const datetime of observations.database.keys()) {
+    if (new Date().getTime() < new Date(datetime).getTime() + DAY_IN_MS) return;
+    itemMessages.concat(
+      Object.values(observations.database.get(datetime)).map((val) => {
+        const feature = features.find(
+          (e) => e.properties.stationId === val.stationId
+        );
+        return {
+          operation: "delete",
+          collectionId,
+          instanceId: datetime,
+          geometry: feature.geometry,
+          itemId: val.stationId,
+        };
+      })
+    );
+    instanceMessages.push({
+      operation: "delete",
+      collectionId,
+      instanceId: datetime,
+    });
 
+    observations.database.delete(datetime);
+  }
+  await db
+    .newCollectionMessages([{ operation: "update", collectionId }])
+    .newInstanceMessages(instanceMessages)
+    .newItemMessages(itemMessages)
+    .commitMessages();
+}, DAY_IN_MS);

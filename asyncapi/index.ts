@@ -1,339 +1,224 @@
 import { Router } from "websocket-express";
-import db, {
-  type Metadata,
-  type Collection,
-  type Instance,
-  type Item,
-  type Operation,
-} from "./db.ts";
+import {
+  db,
+  Database,
+  CollectionType,
+  InstanceType,
+  ItemType,
+  Metadata,
+} from "./firebase.ts";
 import type { Feature, Link } from "../utils/types.d.ts";
 import type { Request } from "express";
 import process from "node:process";
+import { child, get, onValue, ref } from "firebase/database";
 const router = new Router({ caseSensitive: true, strict: true });
 
 router.ws("/collections", async (req, res) => {
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-  const messages = await Array.fromAsync(
-    db.db.list<Collection & Metadata>({
-      prefix: ["notifications", "collection"],
-    })
-  );
-  for (const { value: message } of messages) {
-    ws.send(
-      JSON.stringify({
-        ...message,
-        links: [collectionLink(req, message.collectionId)],
-      })
-    );
-    cachedMessageIds.push(message.id);
-  }
-  while (!ws.CLOSED) {
-    const watcher = await db.db
-      .watch<(Collection & Metadata)[]>([["notifications", "collection"]])
-      .getReader()
-      .read();
 
-    if (watcher.done) break;
-
-    for (const { value: message } of watcher.value) {
-      if (!message) continue;
-      if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(JSON.stringify(message));
-      cachedMessageIds.push(message.id);
+  const unsubscribe = onValue(
+    ref(db.database, "notifications/collections"),
+    (snapshot) => {
+      if (ws.readyState !== ws.OPEN) return;
+      const data: Database["collections"] = snapshot.val() || {};
+      const messages = Object.values(data).flatMap((e) => Object.values(e));
+      for (const message of messages) {
+        if (cachedMessageIds.includes(message.id)) continue;
+        ws.send(JSON.stringify(collection2message(req, message)));
+        cachedMessageIds.push(message.id);
+      }
     }
-  }
+  );
+  ws.on("close", () => {
+    unsubscribe();
+  });
 });
 
 router.ws("/collections/:collectionId", async (req, res) => {
-  const [ws, cachedMessageIds, collectionId] = [
-    await res.accept(),
-    Array<string>(),
-    req.params.collectionId,
-  ];
-  const messages = await Array.fromAsync(
-    db.db.list<Collection & Metadata>({
-      prefix: ["notifications", "collection", collectionId],
-    })
-  );
-  for (const { value: message } of messages) {
-    ws.send(
-      JSON.stringify({
-        ...message,
-        links: [collectionLink(req, message.collectionId)],
-      })
-    );
-    cachedMessageIds.push(message.id);
-  }
-  while (!ws.CLOSED) {
-    const watcher = await db.db
-      .watch<(Collection & Metadata)[]>([
-        ["notifications", "collection", collectionId],
-      ])
-      .getReader()
-      .read();
+  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+  const { collectionId } = req.params;
+  const unsubscribe = onValue(
+    ref(db.database, `notifications/collections/${collectionId}`),
+    (snapshot) => {
+      if (ws.readyState !== ws.OPEN) return;
+      const data: Database["collections"][string] = snapshot.val() || {};
+      // Flatten the Structure
+      const messages = Object.values(data);
 
-    if (watcher.done) break;
-
-    for (const { value: message } of watcher.value) {
-      if (!message) continue;
-      if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(
-        JSON.stringify({
-          ...message,
-          links: [collectionLink(req, collectionId)],
-        })
-      );
-      cachedMessageIds.push(message.id);
+      for (const message of messages) {
+        if (cachedMessageIds.includes(message.id)) continue;
+        ws.send(JSON.stringify(collection2message(req, message)));
+        cachedMessageIds.push(message.id);
+      }
     }
-  }
+  );
+  ws.on("close", () => unsubscribe());
 });
 router.ws("/collections/:collectionId/instances", async (req, res) => {
-  const [ws, cachedMessageIds, collectionId] = [
-    await res.accept(),
-    Array<string>(),
-    req.params.collectionId,
-  ];
-  const messages = await Array.fromAsync(
-    db.db.list<Instance & Metadata>({
-      prefix: ["notifications", "instance", collectionId],
-    })
-  );
-  for (const { value: message } of messages) {
-    ws.send(
-      JSON.stringify({
-        ...message,
-        links: [collectionLink(req, message.collectionId, message.instanceId)],
-      })
-    );
-    cachedMessageIds.push(message.id);
-  }
-  while (!ws.CLOSED) {
-    const watcher = await db.db
-      .watch<(Instance & Metadata)[]>([
-        ["notifications", "instance", collectionId],
-      ])
-      .getReader()
-      .read();
+  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+  const { collectionId } = req.params;
+  const unsubscribe = onValue(
+    ref(db.database, `notifications/instances/${collectionId}`),
+    (snapshot) => {
+      if (ws.readyState !== ws.OPEN) return;
+      const data: Database["instances"][string] = snapshot.val() || {};
+      // Flatten the Structure
+      const messages = Object.values(data).flatMap((e) => Object.values(e));
 
-    if (watcher.done) break;
-
-    for (const { value: message } of watcher.value) {
-      if (!message) continue;
-      if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(
-        JSON.stringify({
-          ...message,
-          links: [collectionLink(req, collectionId, message.instanceId)],
-        })
-      );
-      cachedMessageIds.push(message.id);
+      for (const message of messages) {
+        if (cachedMessageIds.includes(message.id)) continue;
+        ws.send(JSON.stringify(instance2message(req, message)));
+        cachedMessageIds.push(message.id);
+      }
     }
-  }
+  );
+
+  ws.on("close", () => unsubscribe());
 });
 router.ws(
   "/collections/:collectionId/instances/:instanceId",
   async (req, res) => {
     const { instanceId, collectionId } = req.params;
     const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-    const messages = await Array.fromAsync(
-      db.db.list<Collection & Metadata>({
-        prefix: ["notifications", "instance", collectionId, instanceId],
-      })
-    );
-    for (const { value: message } of messages) {
-      ws.send(
-        JSON.stringify({
-          ...message,
-          links: [collectionLink(req, message.collectionId, instanceId)],
-        })
-      );
-      cachedMessageIds.push(message.id);
-    }
-    while (!ws.CLOSED) {
-      const watcher = await db.db
-        .watch<(Collection & Metadata)[]>([
-          ["notifications", "instance", collectionId],
-        ])
-        .getReader()
-        .read();
-
-      if (watcher.done) break;
-
-      for (const { value: message } of watcher.value) {
-        if (!message) continue;
-        if (cachedMessageIds.includes(message.id)) continue;
-        ws.send(
-          JSON.stringify({
-            ...message,
-            links: [collectionLink(req, collectionId, instanceId)],
-          })
-        );
-        cachedMessageIds.push(message.id);
+    const unsubscribe = onValue(
+      ref(db.database, `notifications/instances/${collectionId}/${instanceId}`),
+      (snapshot) => {
+        if (ws.readyState !== ws.OPEN) return;
+        const data: Database["instances"][string][string] =
+          snapshot.val() || {};
+        // Flatten the Structure
+        const messages = Object.values(data);
+        for (const message of messages) {
+          if (cachedMessageIds.includes(message.id)) continue;
+          ws.send(JSON.stringify(instance2message(req, message)));
+          cachedMessageIds.push(message.id);
+        }
       }
-    }
+    );
+    ws.on("close", () => unsubscribe());
   }
 );
 router.ws(
   "/collections/:collectionId/instances/:instanceId/items",
   async (req, res) => {
-    const { collectionId, instanceId } = req.params;
     const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-    const messages = await Array.fromAsync(
-      db.db.list<Item & Metadata>({
-        prefix: ["notifications", "item", collectionId, instanceId],
-      })
-    );
-    for (const { value: message } of messages) {
-      ws.send(JSON.stringify(item2geojson(req)(message)));
-      cachedMessageIds.push(message.id);
-    }
-    while (!ws.CLOSED) {
-      const watcher = await db.db
-        .watch<(Item & Metadata)[]>([
-          ["notifications", "item", collectionId, instanceId],
-        ])
-        .getReader()
-        .read();
+    const { collectionId, instanceId } = req.params;
 
-      if (watcher.done) break;
+    const unsubscribe = onValue(
+      ref(db.database, `notifications/items/${collectionId}`),
+      (snapshot) => {
+        if (ws.readyState !== ws.OPEN) return;
+        const data: Database["items"][string] = snapshot.val() || {};
+        // Flatten the Structure
+        const messages = Object.values(data)
+          .flatMap((e) => Object.values(e))
+          .filter((e) => e.instanceId === instanceId);
 
-      for (const { value: message } of watcher.value) {
-        if (!message) continue;
-        if (cachedMessageIds.includes(message.id)) continue;
-        ws.send(JSON.stringify(item2geojson(req)(message)));
-        cachedMessageIds.push(message.id);
+        for (const message of messages) {
+          if (cachedMessageIds.includes(message.id)) continue;
+          ws.send(JSON.stringify(item2geojson(req)(message)));
+          cachedMessageIds.push(message.id);
+        }
       }
-    }
+    );
+
+    ws.on("close", () => unsubscribe());
   }
 );
 router.ws("/collections/:collectionId/items", async (req, res) => {
   const { collectionId } = req.params;
   const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-  const messages = await Array.fromAsync(
-    db.db.list<Item & Metadata>({
-      prefix: ["notifications", "item", collectionId],
-    })
-  );
-  for (const { value: message } of messages) {
-    ws.send(JSON.stringify(item2geojson(req)(message)));
-    cachedMessageIds.push(message.id);
-  }
-  while (!ws.CLOSED) {
-    const watcher = await db.db
-      .watch<(Item & Metadata)[]>([["notifications", "item", collectionId]])
-      .getReader()
-      .read();
 
-    if (watcher.done) break;
+  const unsubscribe = onValue(
+    ref(db.database, `notifications/items/${collectionId}`),
+    (snapshot) => {
+      if (ws.readyState !== ws.OPEN) return;
+      const data: Database["items"][string] = snapshot.val() || {};
+      // Flatten the Structure
+      const messages = Object.values(data).flatMap((e) => Object.values(e));
 
-    for (const { value: message } of watcher.value) {
-      if (!message) continue;
-      if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(JSON.stringify(item2geojson(req)(message)));
-      cachedMessageIds.push(message.id);
-    }
-  }
-});
-
-router.ws("/collections/:collectionId/items/:itemId", async (req, res) => {
-  const { collectionId, itemId } = req.params;
-  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-  const messages = await Array.fromAsync(
-    db.db.list<Item & Metadata>({
-      prefix: ["notifications", "item", collectionId, itemId],
-    })
-  );
-  for (const { value: message } of messages) {
-    ws.send(JSON.stringify(item2geojson(req)(message)));
-    cachedMessageIds.push(message.id);
-  }
-  while (!ws.CLOSED) {
-    const watcher = await db.db
-      .watch<(Item & Metadata)[]>([
-        ["notifications", "item", collectionId, itemId],
-      ])
-      .getReader()
-      .read();
-
-    if (watcher.done) break;
-
-    for (const { value: message } of watcher.value) {
-      if (!message) continue;
-      if (cachedMessageIds.includes(message.id)) continue;
-      ws.send(JSON.stringify(item2geojson(req)(message)));
-      cachedMessageIds.push(message.id);
-    }
-  }
-});
-
-router.ws(
-  "/collections/:collectionId/instances/:instanceId/items/:itemId",
-  async (req, res) => {
-    const { collectionId, itemId, instanceId } = req.params;
-    const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
-    const messages = (
-      await Array.fromAsync(
-        db.db.list<Item & Metadata>({
-          prefix: ["notifications", "item", collectionId, instanceId, itemId],
-        })
-      )
-    ).map((e) => e.value);
-    for (const message of messages) {
-      ws.send(JSON.stringify(item2geojson(req)(message)));
-      cachedMessageIds.push(message.id);
-    }
-    while (!ws.CLOSED) {
-      const watcher = await db.db
-        .watch<(Item & Metadata)[]>([
-          ["notifications", "item", collectionId, instanceId, itemId],
-        ])
-        .getReader()
-        .read();
-
-      if (watcher.done) break;
-
-      for (const { value: message } of watcher.value) {
-        if (!message) continue;
+      for (const message of messages) {
         if (cachedMessageIds.includes(message.id)) continue;
         ws.send(JSON.stringify(item2geojson(req)(message)));
         cachedMessageIds.push(message.id);
       }
     }
+  );
+  ws.on("close", () => unsubscribe());
+});
+
+router.ws("/collections/:collectionId/items/:itemId", async (req, res) => {
+  const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+  const { collectionId, itemId } = req.params;
+
+  const unsubscribe = onValue(
+    ref(db.database, `notifications/items/${collectionId}/${itemId}`),
+    (snapshot) => {
+      if (ws.readyState !== ws.OPEN) return;
+      const data: Database["items"][string][string] = snapshot.val() || {};
+      // Flatten the Structure
+      const messages = Object.values(data);
+
+      for (const message of messages) {
+        if (cachedMessageIds.includes(message.id)) continue;
+        ws.send(JSON.stringify(item2geojson(req)(message)));
+        cachedMessageIds.push(message.id);
+      }
+    }
+  );
+  ws.on("close", () => unsubscribe());
+});
+
+router.ws(
+  "/collections/:collectionId/instances/:instanceId/items/:itemId",
+  async (req, res) => {
+    const [ws, cachedMessageIds] = [await res.accept(), Array<string>()];
+    const { collectionId, instanceId, itemId } = req.params;
+
+    const unsubscribe = onValue(
+      ref(db.database, `notifications/items/${collectionId}/${itemId}`),
+      (snapshot) => {
+        if (ws.readyState !== ws.OPEN) return;
+        const data: Database["items"][string][string] = snapshot.val() || {};
+        // Flatten the Structure
+        const messages = Object.values(data).filter(
+          (e) => e.instanceId === instanceId
+        );
+
+        for (const message of messages) {
+          if (cachedMessageIds.includes(message.id)) continue;
+          ws.send(JSON.stringify(item2geojson(req)(message)));
+          cachedMessageIds.push(message.id);
+        }
+      }
+    );
+
+    ws.on("close", () => unsubscribe());
   }
 );
 
-// function filterByCollectionId(collectionId: string) {
-//   return (message: Collection | Item | Instance) => {
-//     return collectionId === message.collectionId;
-//   };
-// }
-// function filterByInstanceId(instanceId: string) {
-//   return (message: Item | Instance) => {
-//     if (!message.instanceId) return !ws.CLOSED;
-//     return message.instanceId === instanceId;
-//   };
-// }
-
-// function filterByItemId(itemId: string) {
-//   return (message: Item) => {
-//     return message.itemId === itemId;
-//   };
-// }
-
+function collection2message(req: Request, message: CollectionType) {
+  return { ...message, links: [collectionLink(req, message.collectionId)] };
+}
+function instance2message(req: Request, message: InstanceType) {
+  return {
+    ...message,
+    links: [collectionLink(req, message.collectionId, message.instanceId)],
+  };
+}
 function item2geojson(req: Request) {
   return (
-    message: Item & { id: string; pubtime: string }
+    message: ItemType & { id: string; pubtime: string }
   ): Feature<
     GeoJSON.Geometry,
     {
       pubtime: string;
       itemId: string;
-      operation: Operation;
+      operation: Metadata["operation"];
       [x: string]: any;
     }
   > & { id: string } => {
     const {
-      type: _,
       collectionId: __,
       instanceId: ___,
       geometry,
@@ -366,6 +251,7 @@ function collectionLink(
     rel: "collection",
   };
 }
+
 function itemLink(
   req: Request,
   collectionId: string,

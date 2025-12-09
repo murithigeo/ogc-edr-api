@@ -1,0 +1,270 @@
+export default {
+  type: "FeatureCollection",
+  name: "stations",
+  crs: {
+    type: "name",
+    properties: { name: "urn:ogc:def:crs:OGC:1.3:CRS84" },
+  },
+  features: [
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063733",
+        stationName: "MUSOMA, TZ",
+        country: "Tanzania",
+        elevation: 1147.0,
+      },
+      geometry: { type: "Point", coordinates: [33.8, -1.5] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063816",
+        stationName: "SAME, TZ",
+        country: "Tanzania",
+        elevation: 872.0,
+      },
+      geometry: { type: "Point", coordinates: [37.717, -4.083] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063894",
+        stationName: "DAR ES SALAAM AIRPORT, TZ",
+        country: "Tanzania",
+        elevation: 53.0,
+      },
+      geometry: { type: "Point", coordinates: [39.2, -6.867] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063820",
+        stationName: "MOMBASA, KE",
+        country: "Kenya",
+        elevation: 55.0,
+      },
+      geometry: { type: "Point", coordinates: [39.617, -4.033] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:RWM00064387",
+        stationName: "KIGALI INTERNATIONAL, RW",
+        country: "Rwanda",
+        elevation: 1481.0,
+      },
+      geometry: { type: "Point", coordinates: [30.139, -1.969] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063791",
+        stationName: "KILIMANJARO AIRPORT, TZ",
+        country: "Tanzania",
+        elevation: 896.0,
+      },
+      geometry: { type: "Point", coordinates: [37.067, -3.417] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KEM00063686",
+        stationName: "ELDORET INTERNATIONAL, KE",
+        country: "Kenya",
+        elevation: 2115.6,
+      },
+      geometry: { type: "Point", coordinates: [35.239, 0.404] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063887",
+        stationName: "IRINGA, TZ",
+        country: "Tanzania",
+        elevation: 1428.0,
+      },
+      geometry: { type: "Point", coordinates: [35.767, -7.633] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063740",
+        stationName: "JOMO KENYATTA INTERNATIONAL, KE",
+        country: "Kenya",
+        elevation: 1624.0,
+      },
+      geometry: { type: "Point", coordinates: [36.917, -1.317] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063661",
+        stationName: "KITALE, KE",
+        country: "Kenya",
+        elevation: 1875.0,
+      },
+      geometry: { type: "Point", coordinates: [35.0, 1.016] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063862",
+        stationName: "DODOMA, TZ",
+        country: "Tanzania",
+        elevation: 1120.0,
+      },
+      geometry: { type: "Point", coordinates: [35.767, -6.167] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063612",
+        stationName: "LODWAR, KE",
+        country: "Kenya",
+        elevation: 515.0,
+      },
+      geometry: { type: "Point", coordinates: [35.617, 3.117] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063971",
+        stationName: "MTWARA, TZ",
+        country: "Tanzania",
+        elevation: 113.0,
+      },
+      geometry: { type: "Point", coordinates: [40.183, -10.267] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063790",
+        stationName: "MOSHI, TZ",
+        country: "Tanzania",
+        elevation: 831.0,
+      },
+      geometry: { type: "Point", coordinates: [37.333, -3.35] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KEM00063741",
+        stationName: "NAIROBI DAGORETTI, KE",
+        country: "Kenya",
+        elevation: 1798.0,
+      },
+      geometry: { type: "Point", coordinates: [36.75, -1.3] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063962",
+        stationName: "SONGEA, TZ",
+        country: "Tanzania",
+        elevation: 1036.0,
+      },
+      geometry: { type: "Point", coordinates: [35.583, -10.667] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063723",
+        stationName: "GARISSA, KE",
+        country: "Kenya",
+        elevation: 147.0,
+      },
+      geometry: { type: "Point", coordinates: [39.633, -0.467] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063624",
+        stationName: "MANDERA, KE",
+        country: "Kenya",
+        elevation: 231.0,
+      },
+      geometry: { type: "Point", coordinates: [41.867, 3.933] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063756",
+        stationName: "MWANZA, TZ",
+        country: "Tanzania",
+        elevation: 1140.0,
+      },
+      geometry: { type: "Point", coordinates: [32.917, -2.467] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063789",
+        stationName: "ARUSHA, TZ",
+        country: "Tanzania",
+        elevation: 1387.0,
+      },
+      geometry: { type: "Point", coordinates: [36.633, -3.333] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZM00063870",
+        stationName: "ZANZIBAR, TZ",
+        country: "Tanzania",
+        elevation: 16.5,
+      },
+      geometry: { type: "Point", coordinates: [39.225, -6.222] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063832",
+        stationName: "TABORA AIRPORT, TZ",
+        country: "Tanzania",
+        elevation: 1182.0,
+      },
+      geometry: { type: "Point", coordinates: [32.833, -5.083] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:TZ000063729",
+        stationName: "BUKOBA, TZ",
+        country: "Tanzania",
+        elevation: 1143.0,
+      },
+      geometry: { type: "Point", coordinates: [31.817, -1.333] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KE000063619",
+        stationName: "MOYALE, KE",
+        country: "Kenya",
+        elevation: 1097.0,
+      },
+      geometry: { type: "Point", coordinates: [39.033, 3.533] },
+    },
+    {
+      type: "Feature",
+      properties: {
+        stationId: "GHCND:KEM00063799",
+        stationName: "MALINDI, KE",
+        country: "Kenya",
+        elevation: 25.0,
+      },
+      geometry: { type: "Point", coordinates: [40.102, -3.229] },
+    },
+  ].sort((a, b) =>
+    a.properties.stationName.localeCompare(b.properties.stationName)
+  ),
+} as GeoJSON.FeatureCollection<
+  GeoJSON.Point,
+  {
+    stationId: string;
+    stationName: string;
+    country: "Kenya" | "Tanzania" | "Uganda";
+    elevation: number;
+  }
+>;
