@@ -11,9 +11,8 @@ import {
 } from "firebase/database";
 
 // 2025-12-09T14:44:100;
-export const DEPLOY_ID = `${process.env.NODE_ENV || "development"}-${
-  new Date().toISOString().split(".")[0]
-}`;
+export const DEPLOY_ID = `${env.NODE_ENV || "development"}-ogc-edr-api`;
+
 
 // Init config
 const firebase = initializeApp({
