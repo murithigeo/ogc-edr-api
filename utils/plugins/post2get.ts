@@ -10,8 +10,8 @@ export default function post2getPlugin(): ExegesisPlugin {
     makeExegesisPlugin() {
       return {
         async postSecurity(ctx: ExegesisPluginContext) {
+          console.log(ctx.req.method);
           if (ctx.req.method.toUpperCase() !== "POST") return;
-
           // const url = new URL(ctx.api.serverObject?.url + "/" + ctx.req.url);
           // // const queryParams = Array.from(url.searchParams.keys());
 
@@ -26,12 +26,21 @@ export default function post2getPlugin(): ExegesisPlugin {
           // //   );
           // // }
           const params = await ctx.getParams();
-          const { "parameter-name": parameterName, ...others } =
-            await ctx.getRequestBody();
-          if (parameterName) others["parameter-name"] = parameterName.join(",");
-          others["crs"] =
-            others.crs || "http://www.opengis.net/def/crs/OGC/1.3/CRS84";
-          params.query = others;
+          const body = await ctx.getRequestBody()||{};
+          console.log(body)
+          if ("parameter-name" in body)
+            body["parameter-name"] = body["parameter-name"].join(",");
+          if ("bbox" in body)
+            body.bbox = body.bbox
+              .split(",")
+              .map(parseFloat)
+              .map((e) => {
+                console.log(e);
+                return e;
+              });
+          body["crs"] =
+            body.crs || "http://www.opengis.net/def/crs/OGC/1.3/CRS84";
+          params.query = body;
         },
       };
     },

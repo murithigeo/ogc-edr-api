@@ -22,10 +22,10 @@ import type {
 } from "../types.d.ts";
 import faparanomaly from "./fapar/index.ts";
 import mountains from "./mountains.ts";
-import openmeteo from "./openmeteo/index.ts";
+// import openmeteo from "./openmeteo/index.ts";
 
 export default {
-  datasets: [mountains, faparanomaly, openmeteo].map((d) => ({
+  datasets: [mountains, faparanomaly].map((d) => ({
     ...d,
     crs: Array.from<keyof typeof crs>(
       new Set(["http://www.opengis.net/def/crs/OGC/1.3/CRS84", ...d.crs])

@@ -6,7 +6,7 @@ ValidationError,
 import type { DataQueryConfig } from "../../config/index.ts";
 import { Geometry } from "wkx";
 import { wktToGeoJSON } from "betterknown";
-import { reproject } from "../projection.ts";
+import { reproject } from "../reprojection.ts";
 
 /**
  * @description validates the coords query/post parameter is valid Well-Known-Text

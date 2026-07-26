@@ -1,4 +1,4 @@
-import type { ExegesisRoute, OAS3ApiInfo } from "exegesis-express";
+import type { ExegesisRoute, OAS3ApiInfo } from 'exegesis-express';
 import type {
   Link,
   LandingPage as LP,
@@ -7,12 +7,12 @@ import type {
   Extent as Ext,
   Feature,
   FeatureCollection,
-} from "./utils/types.d.ts";
-import type { I18N, Parameter as PR } from "coveragejson";
-import type { Length } from "convert";
-import type { Geometry } from "geojson";
+} from './features.d.ts';
+import type { I18N, Parameter as PR } from 'coveragejson';
+import type { Length } from 'convert';
+import type { Geometry } from 'geojson';
 
-export type LandingPage = LP & {
+export interface LandingPage extends LP {
   provider?: { name: string; url: string };
   contact?: {
     phone?: string;
@@ -25,7 +25,7 @@ export type LandingPage = LP & {
     stateorprovince?: string;
     country?: string;
   };
-};
+}
 export type EdrGeoJsonProperties = {
   /**
    * @description A URI identifying the query end point. May identify a specific location.
@@ -47,30 +47,28 @@ export type EdrGeoJsonProperties = {
    * @description Unique IDs of available parameters, this is the value used for querying the data and corresponds to an ID in the parameter metadata of the collection.
    * @example ["velocity","temperature"]
    */
-  "parameter-name": Array<string>;
+  'parameter-name': Array<string>;
   [key: string]: unknown;
 };
 export interface EdrFeature<
-  G extends GeoJSON.Geometry = GeoJSON.Geometry,
+  G extends Geometry = Geometry,
   P extends EdrGeoJsonProperties = EdrGeoJsonProperties,
 > extends Feature<G, P> {}
 
-export type EdrFeatureCollection<
+export interface EdrFeatureCollection<
   G extends Geometry = Geometry,
   P extends EdrGeoJsonProperties = EdrGeoJsonProperties,
-> = FeatureCollection<G, P> & {
-  parameters: Parameter[];
-};
+> extends FeatureCollection<G, P> {}
 
 export type Extent = {
-  spatial: Ext["spatial"] & {
+  spatial: Ext['spatial'] & {
     crs?: string;
     values?: {
       x: string[];
       y: string[];
     };
   };
-  temporal: Ext["temporal"] & { values: null | Array<string> };
+  temporal: Ext['temporal'] & { values: null | string[] };
   vertical?: {
     interval: Interval[];
     values: string[] | number[] | null;
@@ -81,15 +79,15 @@ export interface Collection extends CN {
   keywords?: Array<string>;
   extent: Extent;
   output_formats: Array<string>;
-  parameter_names: { [x: string]: Parameter };
+  parameter_names: Record<string, Parameter>;
   data_queries: DataQueries;
+  distanceunits: string[];
 }
 
 export interface BaseVariables {
-  // query_type: LinkObject["link"]["variables"]["query_type"];
-  title: string;
+  title?: string;
   description?: string;
-  output_formats: string[];
+  output_formats?: string[];
   default_output_format: string;
   crs_details?: {
     wkt: string;
@@ -123,42 +121,42 @@ export interface DataQueries {
 }
 
 export interface AreaDataQuery extends BaseVariables {
-  query_type: "area";
+  query_type: 'area';
 }
 export interface CorridorDataQuery extends BaseVariables {
-  query_type: "corridor";
+  query_type: 'corridor';
   /**list of width distance units distance values can be specified in */
   width_units: Length[];
   /**list of height distance units distance values can be specified in */
   height_units: Length[];
 }
 export interface CubeDataQuery extends BaseVariables {
-  query_type: "cube";
+  query_type: 'cube';
   /** list of z distance units vertical values can be specified in*/
   height_units: Length[];
 }
 
 export interface InstancesDataQuery extends BaseVariables {
-  query_type: "instances";
+  query_type: 'instances';
 }
 export interface ItemsDataQuery extends BaseVariables {
-  query_type: "items";
+  query_type: 'items';
 }
 export interface LocationsDataQuery extends BaseVariables {
-  query_type: "locations";
+  query_type: 'locations';
   multi?: boolean;
 }
 export interface PositionDataQuery extends BaseVariables {
-  query_type: "position";
+  query_type: 'position';
 }
 
 export interface RadiusDataQuery extends BaseVariables {
-  query_type: "radius";
+  query_type: 'radius';
   /**list of distance units radius values can be specified in @example ["km","miles"]*/
   within_units: Length[];
 }
 export interface TrajectoryDataQuery extends BaseVariables {
-  query_type: "trajectory";
+  query_type: 'trajectory';
 }
 
 export interface BaseDataQuery {
@@ -170,9 +168,9 @@ export interface BaseDataQuery {
 }
 
 export interface Parameter extends PR {
-  extent?: Collection["extent"];
+  extent?: Collection['extent'];
   measurementType?: MeasurementTypeObject;
-  "data-type": "float" | "string" | "integer";
+  'data-type': 'float' | 'string' | 'integer';
 }
 
 export interface MeasurementTypeObject {
@@ -193,7 +191,7 @@ export interface MeasurementTypeObject {
   period?: string;
 }
 
-declare module "exegesis-express" {
+declare module 'exegesis-express' {
   interface ExegesisContextBase {
     //@ts-expect-error type-mismatch
     api: OAS3ApiInfo;
@@ -206,4 +204,4 @@ declare module "exegesis-express" {
     api: OAS3ApiInfo;
   }
 }
-export type { ConformancePage, FeatureCollection } from "./utils/index.ts";
+export type * from './features.d.ts';

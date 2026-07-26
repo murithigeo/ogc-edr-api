@@ -8,7 +8,7 @@ import {
   fromFile as fromF,
   fromUrl as fromU,
 } from "geotiff";
-import { crs } from "../utils/projection.ts";
+import { crs } from "../utils/reprojection.ts";
 import type { Crs } from "../utils/types.d.ts";
 import type { Dataset } from "./index.ts";
 

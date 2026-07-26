@@ -1,0 +1,3384 @@
+openapi: 3.0.3
+info:
+  title: OGC API- EDR
+  version: 1.1.0
+  description: An example implementation of EDR API in TypeScript
+tags:
+  - name: Capabilities
+    description: Essential characterists of the information available from the API
+  - name: Collection metadata
+    description: Description of the information available from the collections
+  - name: Instance metadata
+    description: Description of the information available from the collections
+  - name: Collection data queries
+    description: Data queries available
+  - name: Instance data queries
+    description: Data queries available on instances of the collection
+paths:
+  /:
+    get:
+      x-exegesis-controller: root_controller
+      tags:
+        - Capabilities
+      summary: landing page of this API
+      description: The landing page provides links to the API definition, the Conformance statements and the metadata about the feature data in this dataset.
+      operationId: getLandingPage
+      parameters:
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/landingpage'
+  /conformance:
+    x-exegesis-controller: conformance_controller
+    get:
+      tags:
+        - Capabilities
+      summary: Information about standards that this API conforms to
+      description: List all requirements classes specified in a standard that the server conforms to
+      operationId: getConformance
+      parameters:
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/conformance'
+  /api:
+    x-exegesis-controller: service_controller
+    get:
+      tags:
+        - Capabilities
+        - Service Metadata
+      summary: Get this document
+      parameters:
+        - $ref: '#/components/parameters/f'
+      x-exegesis-operationId: getServiceDesc
+      responses:
+        '200':
+          description: Ok.
+          content:
+            application/vnd.oai.openapi+json;version=3.0:
+              schema:
+                type: object
+            application/vnd.oai.openapi;version=3.0:
+              schema:
+                type: string
+  /api.html:
+    x-exegesis-controller: service_controller
+    get:
+      tags:
+        - Capabilities
+        - Service Metadata
+      x-exegesis-operationId: getServiceDoc
+      responses:
+        '200':
+          description: Ok.
+          content:
+            text/html:
+              schema:
+                type: string
+  /collections:
+    x-exegesis-controller: collections_controller
+    get:
+      tags:
+        - Capabilities
+      summary: List the avialable collections from the service
+      operationId: listCollections
+      parameters:
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/collections'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}:
+    x-exegesis-controller: collections_controller
+    get:
+      tags:
+        - Collection metadata
+      summary: List query types supported by the collection
+      description: This will provide information about the query types that are supported by the chosen collection Use content negotiation to request HTML or JSON
+      operationId: getCollection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/collection'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/position:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: Query end point for position queries  of collection {collectionId}
+      description: Query end point for position queries
+      operationId: get:position:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/positionCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: Query end point for position queries  of collection {collectionId}
+      description: Query end point for position queries
+      operationId: post:position:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/position'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/radius:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for radius queries  of collection {collectionId}'
+      description: Query end point for to return values within a defined radius of a point queries
+      operationId: get:radius:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/radiusCoords'
+        - $ref: '#/components/parameters/within'
+        - $ref: '#/components/parameters/within-units'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for radius queries  of collection {collectionId}'
+      description: Query end point for to return values within a defined radius of a point queries
+      operationId: post:radius:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/radius'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/area:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for area queries  of collection {collectionId} defined by a polygon'
+      description: Return the data values for the data area defined by the query parameters
+      operationId: get:area:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/areaCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/resolution-x'
+        - $ref: '#/components/parameters/resolution-y'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for area queries  of collection {collectionId} defined by a polygon'
+      description: Return the data values for the data area defined by the query parameters
+      operationId: post:area:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/area'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/cube:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for Cube queries  of collection {collectionId} defined by a cube'
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: get:cube:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/cube-z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for Cube queries  of collection {collectionId} defined by a cube'
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: post:cube:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/cube'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/trajectory:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for trajectory queries  of collection {collectionId} defined by a wkt linestring and a iso8601 time period'
+      description: Return the data values for the data Polygon defined by the query parameters
+      operationId: get:trajectory:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/trajectoryCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for trajectory queries  of collection {collectionId} defined by a wkt linestring and a iso8601 time period'
+      description: Return the data values for the data Polygon defined by the query parameters
+      operationId: post:trajectory:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/trajectory'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/corridor:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for Corridor queries  of collection {collectionId} defined by a polygon'
+      description: Return the data values for the Corridor defined by the query parameters
+      operationId: get:corridor:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/trajectoryCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/corridor-width'
+        - $ref: '#/components/parameters/width-units'
+        - $ref: '#/components/parameters/corridor-height'
+        - $ref: '#/components/parameters/height-units'
+        - $ref: '#/components/parameters/resolution-x'
+        - $ref: '#/components/parameters/resolution-y'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for Corridor queries  of collection {collectionId} defined by a polygon'
+      description: Return the data values for the Corridor defined by the query parameters
+      operationId: post:corridor:collection
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/corridor'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/items:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: List available items
+      description: List the items available in the collection accessible via a unique identifier
+      operationId: get:items:collection:list
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+      responses:
+        '200':
+          $ref: '#/components/responses/items'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: List available items
+      description: List the items available in the collection accessible via a unique identifier
+      operationId: get:items:collection:list
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bbox
+              properties:
+                bbox:
+                  type: string
+                datetime:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/items'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/items/{itemId}:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: Return item {itemId} from collection {collectionId}
+      description: 'Query end point to retrieve data from collection {collectionId} using a unique identifier'
+      operationId: get:items:collection:item
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/itemId'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: Return item {itemId} from collection {collectionId}
+      description: 'Query end point to retrieve data from collection {collectionId} using a unique identifier'
+      operationId: post:items:collection:item
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/itemId'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}:
+    x-exegesis-controller: collections_controller
+    get:
+      operationId: getInstance
+      tags:
+        - Instance metadata
+      parameters:
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/collection'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances:
+    x-exegesis-controller: collections_controller
+    get:
+      tags:
+        - Instance metadata
+      summary: 'List data instances of {collectionId}'
+      description: This will provide list of the available instances of the collection Use content negotiation to request HTML or JSON.
+      operationId: listInstances
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/instances'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/position:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for position queries of instance {instanceId} of collection {collectionId}'
+      description: Query end point for position queries
+      operationId: get:position:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/positionCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for position queries of instance {instanceId} of collection {collectionId}'
+      description: Query end point for position queries
+      operationId: post:position:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/position'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/radius:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point to return data within defined radius of a point for an instance {instanceId} of collection {collectionId}'
+      description: Query end point to return all data within a defined radius of the defined point location queries
+      operationId: get:radius:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/radiusCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/within'
+        - $ref: '#/components/parameters/within-units'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point to return data within defined radius of a point for an instance {instanceId} of collection {collectionId}'
+      description: Query end point to return all data within a defined radius of the defined point location queries
+      operationId: post:position:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/radius'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/area:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for area queries of instance {instanceId} of collection {collectionId} defined by a polygon'
+      description: Return the data values for the data area defined by the query parameters
+      operationId: get:area:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/areaCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/resolution-x'
+        - $ref: '#/components/parameters/resolution-y'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for area queries of instance {instanceId} of collection {collectionId} defined by a polygon'
+      description: Return the data values for the data area defined by the query parameters
+      operationId: post:area:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/area'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/cube:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for Cube queries of instance {instanceId} of collection {collectionId} defined by a cube'
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: get:cube:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/cube-z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for Cube queries of instance {instanceId} of collection {collectionId} defined by a cube'
+      description: Return the data values for the data Cube defined by the query parameters
+      operationId: post:cube:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/cube'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/trajectory:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for trajectory queries of instance {instanceId} of collection {collectionId} defined by a wkt linestring and a iso8601 time period'
+      description: Return the data values for the data Polygon defined by the query parameters
+      operationId: get:trajectory:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/trajectoryCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for trajectory queries of instance {instanceId} of collection {collectionId} defined by a wkt linestring and a iso8601 time period'
+      description: Return the data values for the data Polygon defined by the query parameters
+      operationId: post:trajectory:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/trajectory'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/corridor:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for Corridor queries of instance {instanceId} of collection {collectionId} defined by a polygon'
+      description: Return the data values for the Corridor defined by the query parameters
+      operationId: get:corridor:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/trajectoryCoords'
+        - $ref: '#/components/parameters/z'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/corridor-width'
+        - $ref: '#/components/parameters/width-units'
+        - $ref: '#/components/parameters/corridor-height'
+        - $ref: '#/components/parameters/height-units'
+        - $ref: '#/components/parameters/resolution-x'
+        - $ref: '#/components/parameters/resolution-y'
+        - $ref: '#/components/parameters/resolution-z'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for Corridor queries of instance {instanceId} of collection {collectionId} defined by a polygon'
+      description: Return the data values for the Corridor defined by the query parameters
+      operationId: post:corridor:instance
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/corridor'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/locations:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: List available location identifers for the collection
+      description: List the locations available for the collection
+      operationId: get:locations:collection:list
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+      responses:
+        '200':
+          $ref: '#/components/responses/items'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: List available location identifers for the collection
+      description: List the locations available for the collection
+      operationId: post:locations:collection:list
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      requestBody:
+        $ref: '#/components/requestBodies/locations'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/locations/{locId}:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for queries of collection {collectionId} defined by a location id'
+      description: Return data the for the location defined by locid
+      operationId: get:locations:collection:item
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/locationId'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/parameter-name'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Collection data queries
+      summary: 'Query end point for queries of collection {collectionId} defined by a location id'
+      description: Return data the for the location defined by locid
+      operationId: post:locations:collection:item
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/locationId'
+      requestBody:
+        $ref: '#/components/requestBodies/location'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/locations:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: List available location identifers for the instance
+      description: List the locations available for the instance of the collection
+      operationId: get:locations:instance:list
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/datetime'
+      responses:
+        '200':
+          $ref: '#/components/responses/items'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: List available location identifers for the instance
+      description: List the locations available for the instance of the collection
+      operationId: post:locations:instance:list
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+      requestBody:
+        $ref: '#/components/requestBodies/locations'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+  /collections/{collectionId}/instances/{instanceId}/locations/{locId}:
+    x-exegesis-controller: query_controller
+    get:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for queries of instance {instanceId} of collection {collectionId} defined by a location id'
+      description: Return data the for the location defined by locid
+      operationId: get:locations:instance:item
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/locationId'
+        - $ref: '#/components/parameters/datetime'
+        - $ref: '#/components/parameters/crs'
+        - $ref: '#/components/parameters/f'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+    post:
+      tags:
+        - Instance data queries
+      summary: 'Query end point for queries of instance {instanceId} of collection {collectionId} defined by a location id'
+      description: Return data the for the location defined by locid
+      operationId: post:locations:instance:item
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+        - $ref: '#/components/parameters/instanceId'
+        - $ref: '#/components/parameters/locationId'
+      requestBody:
+        $ref: '#/components/requestBodies/location'
+      responses:
+        '200':
+          $ref: '#/components/responses/200'
+        '202':
+          $ref: '#/components/responses/202'
+        '308':
+          $ref: '#/components/responses/308'
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/404'
+        '413':
+          $ref: '#/components/responses/413'
+        default:
+          $ref: '#/components/responses/exception'
+components:
+  schemas:
+    confClasses:
+      type: object
+      required:
+        - conformsTo
+      properties:
+        conformsTo:
+          type: array
+          items:
+            type: string
+    exception:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+    landingPage:
+      type: object
+      required:
+        - links
+      properties:
+        title:
+          type: string
+          example: Meteorological data server
+        description:
+          type: string
+          example: Access to Meteorological data via a Web API that conforms to the OGC
+            API Environmental Data Retrieval specification.
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+          example:
+            - href: https://example.org/edr/api
+              hreflang: en
+              rel: service-desc
+              type: application/vnd.oai.openapi+json;version=3.0
+              title: ''
+            - href: https://example.org/edr/conformance
+              hreflang: en
+              rel: data
+              type: application/json
+              title: ''
+            - href: https://example.org/edr/collections
+              hreflang: en
+              rel: data
+              type: application/json
+              title: ''
+        keywords:
+          type: array
+          items:
+            type: string
+          example:
+            - Temperature
+            - Wind
+            - Point
+            - Trajectory
+        provider:
+          type: object
+          properties:
+            name:
+              description: Name of organization providing the service
+              type: string
+            url:
+              description: Link to service providers website
+              type: string
+        contact:
+          type: object
+          properties:
+            email:
+              description: Email address of service provider
+              type: string
+            phone:
+              description: Phone number of service provider
+              type: string
+            fax:
+              description: Fax number of service provider
+              type: string
+            hours:
+              type: string
+            instructions:
+              type: string
+            address:
+              type: string
+            postalCode:
+              type: string
+            city:
+              type: string
+            stateorprovince:
+              type: string
+            country:
+              type: string
+    link:
+      type: object
+      required:
+        - href
+        - rel
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/locations/1234
+        rel:
+          type: string
+          example: alternate
+        type:
+          type: string
+          example: application/geo+json
+        hreflang:
+          type: string
+          example: en
+        title:
+          type: string
+          example: Monitoring site name
+        length:
+          type: integer
+        templated:
+          description: defines if the link href value is a template with values requiring replacement
+          type: boolean
+    edrFeatureCollectionGeoJSON:
+      type: object
+      required:
+        - type
+        - features
+      properties:
+        type:
+          type: string
+          enum:
+            - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/featureGeoJSON'
+        parameters:
+          description: list of the data parameters available in the collection
+          type: array
+          items:
+            $ref: '#/components/schemas/parameter'
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+        timeStamp:
+          description: This property indicates the time and date when the response was generated.
+          type: string
+          format: date-time
+          example: '2017-08-17T08:05:32Z'
+        numberMatched:
+          $ref: '#/components/schemas/numberMatched'
+        numberReturned:
+          $ref: '#/components/schemas/numberReturned'
+    unit:
+      type: object
+      description: The units of measure
+      properties:
+        id:
+          type: string
+        label:
+          $ref: '#/components/schemas/i18n'
+        symbol:
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                type:
+                  type: string
+                value:
+                  type: string
+              required:
+                - type
+                - value
+      anyOf:
+        - required:
+            - label
+        - required:
+            - symbol
+    parameter:
+      type: object
+      description: Represents metadata about the values of the coverage
+      properties:
+        id:
+          type: string
+        type:
+          description: Type of the parameter object, shall be "Parameter"
+          type: string
+          enum:
+            - Parameter
+        description:
+          $ref: '#/components/schemas/i18n'
+        observedProperty:
+          $ref: '#/components/schemas/observedProperty'
+        unit:
+          $ref: '#/components/schemas/unit'
+        categoryEncoding:
+          type: object
+          description: Maps IDs of categories in the observedProperty to range values
+          additionalProperties:
+            oneOf:
+              - type: integer
+              - type: array
+                items:
+                  type: integer
+      required:
+        - type
+        - observedProperty
+    edrProperties:
+      type: object
+      title: EDR GeoJSON Properties
+      description: Properties to describe existing EDR features -- may be real-world or virtual sampling features.
+      example:
+        - datetime: 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+          label: Monitoring site name
+          parameter-name:
+            - velocity
+            - temperature
+          edrqueryendpoint: 'https://example.org/api/collections/collection/locations/location_123'
+      required:
+        - datetime
+        - parameter-name
+        - label
+        - edrqueryendpoint
+      properties:
+        datetime:
+          type: string
+          title: Date/time Domain
+          description: Either a date-time or a period string that adheres to RFC 3339. Indicates the time instant or period for which data are available from the EDR feature.
+          default: ''
+          example:
+            - 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+        parameter-name:
+          type: array
+          title: Available Parameters
+          description: Unique IDs of available parameters, this is the value used for querying the data and corresponds to an ID in the parameter metadata of the collection.
+          items:
+            type: string
+            title: Parameter ID list
+            description: Each entry should contain one parameter ID that can be used to query against the feature.
+            default: ''
+            example:
+              - velocity
+              - temperature
+        label:
+          type: string
+          title: Label
+          description: A label such as a site name or other text to use on a link.
+          default: ''
+          example:
+            - Site A
+        edrqueryendpoint:
+          type: string
+          title: EDR Query Endpoint
+          description: A URI identifying the query end point. May identify a specific location.
+          default: ''
+          example:
+            - 'https://example.org/api/collections/collection/locations/location_123d}'
+    observedProperty:
+      type: object
+      description: A definition of the quantity being measured.
+      properties:
+        id:
+          type: string
+        label:
+          $ref: '#/components/schemas/units'
+        description:
+          $ref: '#/components/schemas/units'
+        categories:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              label:
+                $ref: '#/components/schemas/units'
+              description:
+                $ref: '#/components/schemas/units'
+            required:
+              - id
+              - label
+          minItems: 1
+      required:
+        - label
+    units:
+      type: object
+      description: The units of measure
+      properties:
+        id:
+          type: string
+        label:
+          $ref: '#/components/schemas/units'
+        symbol:
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                type:
+                  type: string
+                value:
+                  type: string
+              required:
+                - type
+                - value
+      anyOf:
+        - required:
+            - label
+        - required:
+            - symbol
+    i18n:
+      type: object
+      description: Object representing an internationalised string.
+      additionalProperties:
+        type: string
+    numberMatched:
+      description: |-
+        The number of features of the feature type that match the selection
+        parameters like `bbox`.
+      type: integer
+      minimum: 0
+      example: 127
+    numberReturned:
+      type: integer
+      description: |-
+        The number of features in the feature collection.
+
+        A server may omit this information in a response, if the information
+        about the number of features is not known or difficult to compute.
+
+        If the value is provided, the value shall be identical to the number
+        of items in the "features" array.
+      minimum: 0
+      example: 10
+    parameterGroup:
+      type: object
+      description: Represents logical groups of parameters
+      properties:
+        type:
+          description: Type of the parameter group object, shall be "ParameterGroup"
+          type: string
+          enum:
+            - ParameterGroup
+        id:
+          type: string
+        label:
+          $ref: '#/components/schemas/i18n'
+        description:
+          $ref: '#/components/schemas/i18n'
+        observedProperty:
+          $ref: '#/components/schemas/observedProperty'
+        members:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          uniqueItems: true
+      required:
+        - type
+        - members
+      anyOf:
+        - required:
+            - label
+        - required:
+            - observedProperty
+    featureGeoJSON:
+      type: object
+      required:
+        - type
+        - geometry
+        - properties
+      properties:
+        type:
+          type: string
+          enum:
+            - Feature
+        geometry:
+          oneOf:
+            - $ref: '#/components/schemas/pointGeoJSON'
+            - $ref: '#/components/schemas/multipointGeoJSON'
+            - $ref: '#/components/schemas/linestringGeoJSON'
+            - $ref: '#/components/schemas/multilinestringGeoJSON'
+            - $ref: '#/components/schemas/polygonGeoJSON'
+            - $ref: '#/components/schemas/multipolygonGeoJSON'
+            - $ref: '#/components/schemas/geometrycollectionGeoJSON'
+        properties:
+          $ref: '#/components/schemas/edrProperties'
+        id:
+          oneOf:
+            - type: string
+            - type: integer
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+    geometrycollectionGeoJSON:
+      type: object
+      required:
+        - type
+        - geometries
+      properties:
+        type:
+          type: string
+          enum:
+            - GeometryCollection
+        geometries:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/pointGeoJSON'
+              - $ref: '#/components/schemas/multipointGeoJSON'
+              - $ref: '#/components/schemas/linestringGeoJSON'
+              - $ref: '#/components/schemas/multilinestringGeoJSON'
+              - $ref: '#/components/schemas/polygonGeoJSON'
+              - $ref: '#/components/schemas/multipolygonGeoJSON'
+    linestringGeoJSON:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - LineString
+            - LineStringM
+            - LineStringZ
+            - LineStringZM
+        coordinates:
+          type: array
+          items:
+            type: array
+            minItems: 2
+            items:
+              type: array
+              minItems: 2
+              maxItems: 4
+              items:
+                type: number
+    multilinestringGeoJSON:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - MultiLineString
+        coordinates:
+          type: array
+          items:
+            type: array
+            minItems: 2
+            items:
+              type: array
+              minItems: 2
+              items:
+                type: number
+    multipointGeoJSON:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - MultiPoint
+        coordinates:
+          type: array
+          items:
+            type: array
+            minItems: 2
+            items:
+              type: number
+    multipolygonGeoJSON:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - MultiPolygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              minItems: 4
+              items:
+                type: array
+                minItems: 2
+                items:
+                  type: number
+    pointGeoJSON:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - Point
+        coordinates:
+          type: array
+          minItems: 2
+          items:
+            type: number
+    polygonGeoJSON:
+      type: object
+      required:
+        - type
+        - coordinates
+      properties:
+        type:
+          type: string
+          enum:
+            - Polygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            minItems: 4
+            items:
+              type: array
+              minItems: 2
+              items:
+                type: number
+    areaDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Area query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined area
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - area
+          example: area
+        output_formats:
+          description: list of output formats supported by the Area query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default output format for the Area query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by the Area query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    areaLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/area
+        variables:
+          $ref: '#/components/schemas/areaDataQuery'
+    collection:
+      type: object
+      required:
+        - links
+        - id
+        - extent
+        - data_queries
+        - parameter_names
+        - output_formats
+        - crs
+      properties:
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+          example:
+            - href: https://example.org/service/description.html
+              hreflang: en
+              rel: service-doc
+              type: text/html
+              title: ''
+            - href: https://example.org/service/licence.html
+              hreflang: en
+              rel: licence
+              type: text/html
+              title: ''
+            - href: https://example.org/service/terms-and-conditions.html
+              hreflang: en
+              rel: restrictions
+              type: text/html
+              title: ''
+            - href: https://example.org/edr/collections/the_collection_id/
+              hreflang: en
+              rel: collection
+              type: collection
+              title: Collection
+            - href: https://example.org/edr/collections/the_collection_id/position
+              hreflang: en
+              rel: data
+              type: position
+              title: Position
+            - href: https://example.org/edr/collections/the_collection_id/area
+              hreflang: en
+              rel: data
+              type: area
+              title: Area
+        id:
+          description: id of the collection
+          type: string
+          example: Metar data
+        title:
+          description: title of the collection
+          type: string
+          example: Metar observations
+        description:
+          description: description of the collection
+          type: string
+          example: Last 24 hours Metar observations
+        keywords:
+          description: List of keywords which help to describe the collection
+          type: array
+          items:
+            type: string
+        extent:
+          $ref: '#/components/schemas/extent'
+        data_queries:
+          description: Detailed information relevant to individual query types
+          type: object
+          properties:
+            # TODO Where instances
+            position:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/positionLink'
+            radius:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/radiusLink'
+            area:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/areaLink'
+            cube:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/cubeLink'
+            trajectory:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/trajectoryLink'
+            corridor:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/corridorLink'
+            locations:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/locationsLink'
+            items:
+              type: object
+              properties:
+                link:
+                  $ref: '#/components/schemas/itemsLink'
+        crs:
+          description: list of the coordinate reference systems the collection results can support
+          type: array
+          items:
+            type: string
+        output_formats:
+          description: list of formats the results can be presented in
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        parameter_names:
+          description: list of the data parameters available in the collection
+          type: object
+          additionalProperties:
+            items:
+              $ref: '#/components/schemas/parameterNames'
+    collections:
+      type: object
+      required:
+        - links
+        - collections
+      properties:
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+          example:
+            - href: https://example.org/edr/collections
+              hreflang: en
+              rel: self
+              type: application/yaml
+            - href: https://example.org/edr/collections?f=html
+              hreflang: en
+              rel: alternate
+              type: text/html
+            - href: https://example.org/edr/collections?f=xml
+              hreflang: en
+              rel: alternate
+              type: application/xml
+        collections:
+          type: array
+          items:
+            $ref: '#/components/schemas/collection'
+    corridorDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Corridor query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined corridor
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - corridor
+          example: corridor
+        width_units:
+          description: list of width distance units distance values can be specified in
+          type: array
+          items:
+            type: string
+          example:
+            - km
+            - miles
+        height_units:
+          description: list of height distance units distance values can be specified in
+          type: array
+          items:
+            type: string
+          example:
+            - m
+            - hPa
+        output_formats:
+          description: list of output formats the supported by the Corridor query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default output format for the Corridor query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by the Corridor query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    corridorLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/corridor
+        variables:
+          $ref: '#/components/schemas/corridorDataQuery'
+    crsObject:
+      type: object
+      required:
+        - crs
+        - wkt
+      properties:
+        crs:
+          description: name of the coordinate reference system, used as the value in the crs query parameter to define the required output CRS
+          type: string
+          example: native
+        wkt:
+          description: Well Known text description of the coordinate reference system
+          type: string
+          example: 'GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]'
+    cubeDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Cube query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined well known text point
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - cube
+          example: cube
+        height_units:
+          description: list of height distance units distance values can be specified in
+          type: array
+          items:
+            type: string
+          example:
+            - m
+            - hPa
+        output_formats:
+          description: list of output formats supported by the Cube query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default output format of the Cube query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by the Cube query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    cubeLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/cube
+        variables:
+          $ref: '#/components/schemas/cubeDataQuery'
+    extent:
+      description: >-
+        The extent of the information in the collection. In the Core only spatial and
+        temporal
+
+        extents are specified. Extensions may add additional members to represent other
+
+        extents, for example, thermal or pressure ranges.
+      type: object
+      properties:
+        spatial:
+          description: The spatial extent of the information in the collection.
+          type: object
+          required:
+            - bbox
+            - crs
+          properties:
+            bbox:
+              description: >-
+                One or more bounding boxes that describe the spatial extent of the
+                dataset.
+
+                In the Core only a single bounding box is supported. Extensions may support
+
+                additional areas. If multiple areas are provided, the union of the bounding
+
+                boxes describes the spatial extent.
+              type: array
+              minItems: 1
+              items:
+                description: >-
+                  Each bounding box is provided as four or six numbers, depending on
+
+                  whether the coordinate reference system includes a vertical axis
+
+                  (height or depth):
+
+
+                  * Lower left corner, coordinate axis 1
+
+                  * Lower left corner, coordinate axis 2
+
+                  * Minimum value, coordinate axis 3 (optional)
+
+                  * Upper right corner, coordinate axis 1
+
+                  * Upper right corner, coordinate axis 2
+
+                  * Maximum value, coordinate axis 3 (optional)
+
+
+                  The coordinate reference system of the values is WGS 84 longitude/latitude
+
+                  (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate
+
+                  reference system is specified in `crs`.
+
+
+                  For WGS 84 longitude/latitude the values are in most cases the sequence of
+
+                  minimum longitude, minimum latitude, maximum longitude and maximum latitude.
+
+                  However, in cases where the box spans the antimeridian the first value
+
+                  (west-most box edge) is larger than the third value (east-most box edge).
+
+
+                  If the vertical axis is included, the third and the sixth number are
+
+                  the bottom and the top of the 3-dimensional bounding box.
+
+
+                  If a feature has multiple spatial geometry properties, it is the decision of the
+
+                  server whether only a single spatial geometry property is used to determine
+
+                  the extent or all relevant geometries.
+                oneOf:
+                  - items:
+                      type: number
+                    minItems: 4
+                    maxItems: 4
+                    type: array
+                  - items:
+                      type: number
+                    minItems: 6
+                    maxItems: 6
+                    type: array
+              example:
+                - -180
+                - -90
+                - 180
+                - 90
+            crs:
+              description: >-
+                Coordinate reference system of the coordinates in the spatial extent
+
+                (property `bbox`). The default reference system is WGS 84 longitude/latitude.
+
+                In the Core this is the only supported coordinate reference system.
+
+                Extensions may support additional coordinate reference systems
+              type: string
+              default: GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS
+                84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]]
+            name:
+              description: Name of the vertical coordinate reference system
+              type: string
+        temporal:
+          description: The temporal extent of the information in the collection.
+          type: object
+          required:
+            - interval
+            - trs
+          properties:
+            interval:
+              description: RFC3339 compliant Date and Time
+              type: array
+              minItems: 1
+              items:
+                description: |-
+                  Begin and end times of the time interval. The timestamps are in the
+                  temporal coordinate reference system specified in `trs`. By default
+                  this is the Gregorian calendar.
+                type: array
+                minItems: 2
+                maxItems: 2
+                items:
+                  type: string
+                  format: date-time
+                  nullable: true
+                example:
+                  - ['2020-11-12T12:15Z', '2020-11-12T12:15Z']
+                  - ['2020-11-12T12:15Z', '2020-11-12T12:45Z']
+                  - ['2022-01-14T09:00Z', '2022-01-15T09:00Z']
+                  - ['2022-01-14T09:00Z', '2022-01-14T21:00Z']
+                  - ['2022-01-14T09:00Z', '2022-01-16T09:00Z']
+
+            values:
+              description: |-
+                Provides information about the time intervals available in the collection
+                as ISO8601 compliant dates, either as a time range specified
+                as start time / end time  (e.g. 2017-11-14T09:00Z/2017-11-14T21:00Z)  or
+                as number of repetitions / start time / interval (e.g. R4/2017-11-14T21:00Z/PT3H)
+                or a list of time values (e.g.
+                2017-11-14T09:00Z,2017-11-14T12:00Z,2017-11-14T15:00Z,2017-11-14T18:00Z,2017-11-14T21:00Z)
+              type: array
+              minItems: 1
+              items:
+                type: string
+                minItems: 1
+                format: date-time
+                nullable: true
+                example:
+                  - ['2020-11-12T12:15Z']
+                  - ['2020-11-12T12:15Z', '2020-11-12T12:30Z', '2020-11-12T12:45Z']
+                  - ['R12/2022-01-14T09:00Z/2022-01-15T09:00Z']
+                  - ['R12/2022-01-14T09:00Z/PT1H']
+                  - [
+                      'R12/2022-01-14T09:00Z/PT1H',
+                      'R4/2022-01-14T21:00Z/PT3H',
+                      'R4/2022-01-15T09:00Z/PT6H',
+                    ]
+            trs:
+              description: >-
+                Coordinate reference system of the coordinates in the temporal extent
+
+                (property `interval`). The default reference system is the Gregorian calendar.
+
+                In the Core this is the only supported temporal coordinate reference system.
+
+                Extensions may support additional temporal coordinate reference systems
+              type: string
+              example: TIMECRS["DateTime",TDATUM["Gregorian Calendar"],CS[TemporalDateTime,1],AXIS["Time (T)",future]]
+              default: http://www.opengis.net/def/uom/ISO-8601/0/Gregorian
+            name:
+              description: Name of the temporal coordinate reference system
+              type: string
+        vertical:
+          description: The vertical extent of the information in the collection.
+          type: object
+          required:
+            - interval
+            - vrs
+          properties:
+            interval:
+              description: >-
+                In the Core only a single time interval is supported. Extensions may support
+
+                multiple intervals. If multiple intervals are provided, the union of the
+
+                intervals describes the vertical extent.
+              type: array
+              minItems: 1
+              items:
+                description: >-
+                  minimum and maximum heights of the vertical interval. The values are
+                  in the
+
+                  vertical coordinate reference system specified in `vrs`. By default
+
+                  this is the vertical coordinate reference system of the source information.
+                type: array
+                minItems: 1
+                items:
+                  type: string
+                  nullable: true
+                example:
+                  - ['2', '100']
+            values:
+              description: |-
+                Vertical level intervals that data in the collection is available at
+                these can be defined as follows:
+                min level / max level (e.g. "2/100") or
+                as number of repetitions / start level / interval (e.g."R5/100/50")
+                or a list of vertical levels (e.g. "2",10,"80","100"}
+                The value `null` is supported and indicates an open vertical interval.
+              type: array
+              minItems: 1
+              items:
+                type: string
+                nullable: true
+                example:
+                  - ['2/100']
+                  - ['R20/1000/-50']
+                  - ['2', '10', '80', '100']
+            vrs:
+              description: |-
+                Coordinate reference system of the coordinates in the vertical extent
+                (property `interval`).
+              type: string
+              example: VERTCS["WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PARAMETER["Vertical_Shift",0.0],PARAMETER["Direction",1.0],UNIT["Meter",1.0]],AXIS["Up",UP]
+              default: VERTCS["WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PARAMETER["Vertical_Shift",0.0],PARAMETER["Direction",1.0],UNIT["Meter",1.0]],AXIS["Up",UP]
+            name:
+              description: Name of the vertical coordinate reference system
+              type: string
+    itemsDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Items query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined well known text point
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - items
+          example: items
+    itemsLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/items
+        variables:
+          $ref: '#/components/schemas/itemsDataQuery'
+    locationsDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Locations query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined well known text point
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - locations
+          example: locations
+        output_formats:
+          description: list of output formats supported by the Locations query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default output format of the Locations query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by the Locations query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    locationsLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/locations
+        variables:
+          $ref: '#/components/schemas/locationsDataQuery'
+    observedPropertyCollection:
+      type: object
+      title: name of property
+      description: Description of the property
+      required:
+        - label
+      properties:
+        id:
+          description: >-
+            URI linking to an external registry which contains the definitive
+            definition of
+
+            the observed property
+          type: string
+        label:
+          oneOf:
+            - type: string
+            - type: object
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            minItems: 1
+            type: object
+            required:
+              - id
+              - label
+            properties:
+              id:
+                description: >-
+                  URI linking to an external registry which contains the definitive
+                  definition of
+
+                  the observed property
+                type: string
+              label:
+                oneOf:
+                  - type: string
+                  - type: object
+              description:
+                oneOf:
+                  - type: string
+                  - type: object
+                    required:
+                      - en
+                    properties:
+                      en:
+                        type: string
+      example:
+        id: http://vocab.nerc.ac.uk/standard_name/sea_ice_area_fraction/
+        label: Sea Ice Concentration
+    parameterNames:
+      type: object
+      title: Parameter name
+      description: Definition of data parameter
+      required:
+        - type
+        - observedProperty
+      properties:
+        type:
+          description: type
+          enum:
+            - Parameter
+        description:
+          type: string
+        label:
+          type: string
+        data-type:
+          description: Data type of returned parameter
+          type: string
+          enum:
+            - integer
+            - float
+            - string
+        unit:
+          $ref: '#/components/schemas/units'
+        observedProperty:
+          $ref: '#/components/schemas/observedPropertyCollection'
+        categoryEncoding:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: integer
+              - type: array
+                items:
+                  type: integer
+        extent:
+          $ref: '#/components/schemas/extent'
+        id:
+          description: Unique ID of the parameter, this is the value used for querying the data
+          type: string
+        measurementType:
+          type: object
+          title: Parameter measurement approach
+          description: Approach to calculating the data values
+          required:
+            - method
+          properties:
+            method:
+              type: string
+              example: mean
+            duration:
+              type: string
+              title: Measurement time duration
+              description: The time duration that the value was calculated for as an RFC3339
+                duration value.  If the method value is instantaneous this value is
+                not required.
+              example: PT10M
+      example:
+        type: Parameter
+        id: sea_ice
+        description: Sea Ice concentration (ice=1;no ice=0)
+        unit:
+          label: Ratio
+          symbol:
+            value: '1'
+            type: http://www.opengis.net/def/uom/UCUM/
+        observedProperty:
+          id: http://vocab.nerc.ac.uk/standard_name/sea_ice_area_fraction/
+          label: Sea Ice Concentration
+    positionDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Position query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined well known text point
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - position
+          example: position
+        output_formats:
+          description: list of output formats supported by the Position query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default output format for the Position query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by the Position query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    positionLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/position
+        variables:
+          $ref: '#/components/schemas/positionDataQuery'
+    radiusDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Radius query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined well known text point
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - radius
+          example: radius
+        within_units:
+          description: list of distance units radius values can be specified in
+          type: array
+          items:
+            type: string
+          example:
+            - km
+            - miles
+        output_formats:
+          description: list of formats supported by the Radius query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default outputformat for the Radius query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by the Radius query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    radiusLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/radius
+        variables:
+          $ref: '#/components/schemas/radiusDataQuery'
+    trajectoryDataQuery:
+      description: Property to contain any extra metadata information that is specific
+        to an individual data queries
+      type: object
+      properties:
+        title:
+          description: title of the query
+          type: string
+          example: Trajectory query
+        description:
+          description: description of the query
+          type: string
+          example: Query to return data for a defined well known text point
+        query_type:
+          description: Type of EDR query
+          type: string
+          enum:
+            - trajectory
+          example: trajectory
+        output_formats:
+          description: list of output formats supported by the Trajectory query
+          type: array
+          items:
+            type: string
+          example:
+            - CoverageJSON
+            - GeoJSON
+            - IWXXM
+            - GRIB
+        default_output_format:
+          description: default output format for the Trajectory query
+          type: string
+        crs_details:
+          description: List of key/value definitions for the CRS's supported by a Trajectory query.  The key is the query parameter and the value is the Well Known Text description
+          type: array
+          items:
+            $ref: '#/components/schemas/crsObject'
+    trajectoryLink:
+      allOf:
+        - $ref: '#/components/schemas/link'
+      properties:
+        href:
+          type: string
+          example: https://example.com/collections/monitoringsites/trajectory
+        variables:
+          $ref: '#/components/schemas/trajectoryDataQuery'
+    instances:
+      type: object
+      required:
+        - links
+        - instances
+      properties:
+        links:
+          type: array
+          items:
+            $ref: '#/components/schemas/link'
+          example:
+            - href: https://example.org/edr/collections/the_collection_id/instances
+              hreflang: en
+              rel: self
+              type: application/json
+            - href: https://example.org/edr/collections/the_collection_id/instances?f=html
+              hreflang: en
+              rel: alternate
+              type: text/html
+            - href: https://example.org/edr/collections/the_collection_id/instances?f=xml
+              hreflang: en
+              rel: alternate
+              type: application/xml
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/collection'
+    coveragejson:
+      type: object
+  parameters:
+    f:
+      name: f
+      in: query
+      description: format to return the data response in
+      required: false
+      schema:
+        type: string
+    areaCoords:
+      name: coords
+      in: query
+      description: |-
+        Only data that has a geometry that intersects the area defined by the polygon
+        are selected.
+
+        The polygon is defined using a Well Known Text string following
+
+        coords=POLYGON((x y,x1 y1,x2 y2,...,xn yn x y))
+
+        which are values in the coordinate system defined by the crs query parameter
+        (if crs is not defined the values will be assumed to be WGS84 longitude/latitude coordinates).
+
+        For instance a polygon that roughly describes an area that contains
+        South West England in WGS84 would look like:
+
+        coords=POLYGON((-6.1 50.3,-4.35 51.4,-2.6 51.6,-2.8 50.6,-5.3 49.9,-6.1,50.3))
+
+        see https://portal.opengeospatial.org/files/?artifact_id=25355 and
+        https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry
+
+        The coords parameter will only support 2D POLYGON definitions
+      required: true
+      schema:
+        type: string
+    bbox:
+      name: bbox
+      in: query
+      description: |-
+        Only features that have a geometry that intersects the bounding box are selected.
+        The bounding box is provided as four or six numbers, depending on whether the
+        coordinate reference system includes a vertical axis (height or depth):
+        * Lower left corner, coordinate axis 1
+        * Lower left corner, coordinate axis 2
+        * Minimum value, coordinate axis 3 (optional)
+        * Upper right corner, coordinate axis 1
+        * Upper right corner, coordinate axis 2
+        * Maximum value, coordinate axis 3 (optional)
+        The coordinate reference system of the values is WGS 84 longitude/latitude
+        (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate
+        reference system is specified in the parameter `bbox-crs`.
+        For WGS 84 longitude/latitude the values are in most cases the sequence of
+        minimum longitude, minimum latitude, maximum longitude and maximum latitude.
+        However, in cases where the box spans the antimeridian the first value
+        (west-most box edge) is larger than the third value (east-most box edge).
+        If the vertical axis is included, the third and the sixth number are the
+        bottom and the top of the 3-dimensional bounding box.
+        If a feature has multiple spatial geometry properties, it is the decision of the
+        server whether only a single spatial geometry property is used to determine
+        the extent or all relevant geometries.
+      required: false
+      schema:
+        oneOf:
+          - items:
+              minItems: 4
+              maxItems: 4
+              type: number
+            type: array
+          - items:
+              minItems: 6
+              maxItems: 6
+              type: number
+            type: array
+      style: form
+      explode: false
+    corridor-height:
+      name: corridor-height
+      in: query
+      description: |+
+        height of the corridor
+
+        The height value represents the whole height of the corridor where
+        the trajectory supplied in the `coords` query parameter is the centre
+        point of the corridor
+
+        `corridor-height={height}`
+
+        e.g.  corridor-height=100
+
+        Would be a request for a corridor 100 units high with the coords parameter values being the centre point of the requested corridor,
+        the request would be for data values 50 units either side of the trajectory coordinates defined in the coords parameter.
+
+        The height units supported by the collection will be provided in the API metadata responses
+      required: true
+      schema:
+        type: string
+        format: stringButNumber
+    corridor-width:
+      name: corridor-width
+      in: query
+      description: |+
+        width of the corridor
+
+        The width value represents the whole width of the corridor where
+        the trajectory supplied in the `coords` query parameter is the centre
+        point of the corridor
+
+        `corridor-width={width}`
+
+        e.g.  corridor-width=100
+
+        Would be a request for a corridor 100 units wide with the coords parameter values being the centre point of the requested corridor,
+        the request would be for data values 50 units either side of the trajectory coordinates defined in the coords parameter.
+
+        The width units supported by the collection will be provided in the API metadata responses
+      required: true
+      schema:
+        type: string
+        format: stringButNumber
+    crs:
+      name: crs
+      in: query
+      description: identifier (id) of the coordinate system to return data in list of valid crs identifiers for the chosen collection are defined in the metadata responses.  If not supplied the coordinate reference system will default to WGS84.
+      required: false
+      example: native
+      schema:
+        type: string
+        default: http://www.opengis.net/def/crs/OGC/1.3/CRS84
+    cube-z:
+      name: z
+      in: query
+      description: |+
+        Define the vertical levels to return data from
+
+        The value will override any vertical values defined in the BBOX query parameter
+
+        A range to return data for all levels between and including 2 defined levels
+
+        i.e. z=minimum value/maximum value
+
+        for instance if all values between and including 10m and 100m
+
+        z=10/100
+
+        A list of height values can be specified
+        i.e. z=value1,value2,value3
+
+        for instance if values at 2m, 10m and 80m are required
+
+        z=2,10,80
+
+        An Arithmetic sequence using Recurring height intervals, the difference is the number of recurrences is defined at the start
+        and the amount to increment the height by is defined at the end
+
+        i.e. z=Rn/min height/height interval
+
+        so if the request was for 20 height levels 50m apart starting at 100m:
+
+        z=R20/100/50
+
+        When not specified data from all available heights SHOULD be returned
+      required: false
+      schema:
+        type: string
+    height-units:
+      name: height-units
+      in: query
+      description: Distance units for the corridor-height parameter
+      required: true
+      example: KM
+      schema:
+        type: string
+    parameter-name:
+      name: parameter-name
+      in: query
+      description: comma delimited list of parameters to retrieve data for.  Valid parameters are listed in the collections metadata
+      schema:
+        type: string
+      style: form
+      explode: false
+      required: false
+    positionCoords:
+      name: coords
+      in: query
+      description: |+
+        location(s) to return data for, the coordinates are defined by a Well Known Text
+        (wkt) string. to retrieve a single location :
+
+        POINT(x y) i.e. POINT(0 51.48) for Greenwich, London
+
+        And for a list of locations
+
+        MULTIPOINT((x y),(x1 y1),(x2 y2),(x3 y3))
+
+        i.e.
+        MULTIPOINT((38.9 -77),(48.85 2.35),(39.92 116.38),(-35.29 149.1),(51.5 -0.1))
+
+        see http://portal.opengeospatial.org/files/?artifact_id=25355 and
+        https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry
+
+        the coordinate values will depend on the CRS parameter, if this is not defined
+        the values will be assumed to WGS84 values (i.e x=longitude and y=latitude)
+      required: true
+      schema:
+        type: string
+    radiusCoords:
+      name: coords
+      in: query
+      description: |
+        location(s) to return data for, the coordinates are defined by a Well Known Text
+        (wkt) string. to retrieve a single location :
+
+        POINT(x y) i.e. POINT(0 51.48) for Greenwich, London
+
+        see http://portal.opengeospatial.org/files/?artifact_id=25355 and
+        https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry
+
+        the coordinate values will depend on the CRS parameter, if this is not defined
+        the values will be assumed to WGS84 values (i.e x=longitude and y=latitude)
+      required: true
+      schema:
+        type: string
+    resolution-x:
+      name: resolution-x
+      in: query
+      description: |+
+        Defined it the user requires data at a different resolution from the native resolution of the data along the x-axis
+
+        If this is a single value it denotes the number of intervals to retrieve data for along the x-axis
+
+          i.e. resolution-x=10
+
+        would retrieve 10 values along the x-axis from the minimum x coordinate to maximum x coordinate (i.e. a value at both the minimum x and maximum x coordinates and 8 values between).
+      required: false
+      schema:
+        type: string
+        format: stringButInteger
+    resolution-y:
+      name: resolution-y
+      in: query
+      description: |+
+        Defined it the user requires data at a different resolution from the native resolution of the data along the y-axis
+
+        If this is a single value it denotes the number of intervals to retrieve data for along the y-axis
+
+          i.e. resolution-y=10
+
+        would retrieve 10 values along the y-axis from the minimum y coordinate to maximum y coordinate (i.e. a value at both the minimum y and maximum y coordinates and 8 values between).
+      required: false
+      schema:
+        type: string
+        format: stringButInteger
+    resolution-z:
+      name: resolution-z
+      in: query
+      description: |+
+        Defined it the user requires data at a different resolution from the native resolution of the data along the z-axis
+
+        If this is a single value it denotes the number of intervals to retrieve data for along the z-axis
+
+          i.e. resolution-z=10
+
+        would retrieve 10 values along the z-axis from the minimum z coordinate to maximum z  coordinate (i.e. a value at both the minimum z and maximum z coordinates and 8 values between).
+      required: false
+      schema:
+        type: string
+        format: stringButInteger
+    trajectoryCoords:
+      name: coords
+      in: query
+      description: |-
+        Only data that has a geometry that intersects the area defined by the linestring
+        are selected.
+
+        The trajectory is defined using a Well Known Text string following
+
+        A 2D trajectory, on the surface of earth with no time or height dimensions:
+            coords=LINESTRING(-2.87 51.14 , -2.98 51.36,-3.15 51.03 ,-3.48 50.74 ,-3.36 50.9 )
+
+        A 2D trajectory, on the surface of earth with all for the same time and no height dimension, time value defined in ISO8601 format by the `datetime` query parameter :
+            coords=LINESTRING(-2.87 51.14 , -2.98 51.36 ,-3.15 51.03 ,-3.48 50.74 ,-3.36 50.9 )&time=2018-02-12T23:00:00Z
+
+        A 2D trajectory, on the surface of earth with no time value but at a fixed height level, height defined in the collection height units by the `z` query parameter :
+            coords=LINESTRING(-2.87 51.14 , -2.98 51.36 ,-3.15 51.03 ,-3.48 50.74 ,-3.36 50.9 )&z=850
+
+        A 2D trajectory, on the surface of earth with all for the same time and at a fixed height level, time value defined in ISO8601 format by the `datetime` query parameter and height defined in the collection height units by the `z` query parameter :
+            coords=LINESTRING(-2.87 51.14 , -2.98 51.36 ,-3.15 51.03 ,-3.48 50.74 ,-3.36 50.9 )&time=2018-02-12T23:00:00Z&z=850
+
+        A 3D trajectory, on the surface of the earth but over a time range with no height values:
+        coords=LINESTRINGM(-2.87 51.14  1560507000,-2.98 51.36  1560507600,-3.15 51.03  1560508200,-3.48 50.74  1560508500,-3.36 50.9  1560510240)
+
+        A 3D trajectory, on the surface of the earth but over a time range with a fixed height value, height defined in the collection height units by the `z` query parameter :
+        coords=LINESTRINGM(-2.87 51.14  1560507000,-2.98 51.36  1560507600,-3.15 51.03  1560508200,-3.48 50.74  1560508500,-3.36 50.9  1560510240)&z=200
+
+
+        A 3D trajectory, through a 3D volume with height or depth, but no defined time:
+        coords=LINESTRINGZ(-2.87 51.14  0.1,-2.98 51.36  0.2,-3.15 51.03  0.3,-3.48 50.74  0.4,-3.36 50.9  0.5)
+
+        A 3D trajectory, through a 3D volume with height or depth, but a fixed time time value defined in ISO8601 format by the `datetime` query parameter:
+        coords=LINESTRINGZ(-2.87 51.14  0.1,-2.98 51.36  0.2,-3.15 51.03  0.3,-3.48 50.74  0.4,-3.36 50.9  0.5)&time=2018-02-12T23:00:00Z
+
+        A 4D trajectory, through a 3D volume but over a time range:
+        coords=LINESTRINGZM(-2.87 51.14 0.1 1560507000,-2.98 51.36 0.2 1560507600,-3.15 51.03 0.3 1560508200, -3.48 50.74 0.4 1560508500, -3.36 50.9 0.5 1560510240)
+        (using either the `time` or `z` parameters with a 4D trajectory wil generate an error response)
+
+        where Z in `LINESTRINGZ` and `LINESTRINGZM` refers to the height value.
+        `If the specified CRS does not define the height units, the heights units will default to metres above mean sea level`
+
+        and the M in `LINESTRINGM` and `LINESTRINGZM` refers to the number of seconds that have elapsed since the Unix epoch, that is the time 00:00:00 UTC on 1 January 1970. See
+        https://en.wikipedia.org/wiki/Unix_time
+
+      required: true
+      schema:
+        type: string
+    width-units:
+      name: width-units
+      in: query
+      description: Distance units for the corridor-width parameter
+      required: true
+      example: KM
+      schema:
+        type: string
+    within-units:
+      name: within-units
+      in: query
+      description: Distance units for the within parameter
+      required: true
+      example: KM
+      schema:
+        type: string
+    within:
+      name: within
+      in: query
+      description: Defines radius of area around defined coordinates to include in the data selection
+      required: true
+      example: 10
+      schema:
+        type: number
+        format: stringButNumber
+    datetime:
+      name: datetime
+      in: query
+      description: >-
+        Either a date-time or an interval. Date and time expressions
+        adhere to RFC 3339, section 5.6. Intervals may be bounded or half-bounded (double-dots at start or end).
+        Server implementations may or may not support times expressed using time offsets from UTC, but need to support
+        UTC time with the notation ending with a Z.
+
+        Examples:
+
+        * A date-time: "2018-02-12T23:20:50Z"
+        * A bounded interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+        * Half-bounded intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+        Only resources that have a temporal property that intersects the value of
+        `datetime` are selected.
+
+        If a feature has multiple temporal properties, it is the decision of the
+        server whether only a single temporal property is used to determine
+        the extent or all relevant temporal properties.
+      required: false
+      schema:
+        type: string
+      style: form
+      explode: false
+    z:
+      name: z
+      in: query
+      description: |+
+        Define the vertical level to return data from
+        i.e. z=level
+
+        for instance if the 850hPa pressure level is being queried
+
+        z=850
+
+        or a range to return data for all levels between and including 2 defined levels
+        i.e. z=minimum value/maximum value
+
+        for instance if all values between and including 10m and 100m
+
+        z=10/100
+
+        finally a list of height values can be specified
+        i.e. z=value1,value2,value3
+
+        for instance if values at 2m, 10m and 80m are required
+
+        z=2,10,80
+
+        An Arithmetic sequence using Recurring height intervals, the difference is the number of recurrences is defined at the start
+        and the amount to increment the height by is defined at the end
+
+        i.e. z=Rn/min height/height interval
+
+        so if the request was for 20 height levels 50m apart starting at 100m:
+
+        z=R20/100/50
+
+        When not specified data from all available heights SHOULD be returned
+      required: false
+      schema:
+        type: string
+      style: form
+      explode: false
+    instanceId:
+      name: instanceId
+      in: path
+      description: Identifier (id) of a specific instance of a collection
+      required: true
+      schema:
+        type: string
+    itemId:
+      name: itemId
+      in: path
+      required: true
+      description: 'Retrieve data from the collection using a unique identifier.'
+      schema:
+        type: string
+    locationId:
+      name: locId
+      in: path
+      required: true
+      description: Retrieve data for the location defined by locId (i.e. London_Heathrow, EGLL, 03772 etc)
+      schema:
+        type: string
+    collectionId:
+      name: collectionId
+      in: path
+      description: Identifier (id) of a specific collection
+      required: true
+      schema:
+        type: string
+  requestBodies:
+    area:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - coords
+            properties:
+              coords:
+                description: Well Known Text Polygon definition
+                type: string
+              z:
+                type: string
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              crs:
+                type: string
+              resolution-x:
+                type: string
+                format: stringButInteger
+              resolution-y:
+                type: string
+                format: stringButInteger
+              f:
+                type: string
+    corridor:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - coords
+              - corridor-width
+              - width-units
+              - corridor-height
+              - height-units
+            properties:
+              coords:
+                description: Well Known Text LineString definition
+                type: string
+              z:
+                type: string
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              corridor-width:
+                type: string
+                format: stringButNumber
+              width-units:
+                type: string
+              corridor-height:
+                type: string
+                format: stringButNumber
+              height-units:
+                type: string
+              resolution-x:
+                type: string
+                format: stringButInteger
+              resolution-y:
+                type: string
+                format: stringButInteger
+              crs:
+                type: string
+              f:
+                type: string
+    cube:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - bbox
+            properties:
+              bbox:
+                type: string
+              z:
+                type: string
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              crs:
+                type: string
+              f:
+                type: string
+    location:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              crs:
+                type: string
+              f:
+                type: string
+    locations:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              bbox:
+                type: string
+              datetime:
+                type: string
+    position:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - coords
+            properties:
+              coords:
+                description: Well Known Text Point definition
+                type: string
+              z:
+                type: string
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              crs:
+                type: string
+              f:
+                type: string
+    radius:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - coords
+              - within
+              - within-units
+            properties:
+              coords:
+                description: Well Known Text Point definition
+                type: string
+              within:
+                type: number
+              within-units:
+                type: string
+              z:
+                type: string
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              crs:
+                type: string
+              f:
+                type: string
+    trajectory:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - coords
+            properties:
+              coords:
+                description: Well Known Text LineString definition
+                type: string
+              z:
+                type: string
+              datetime:
+                type: string
+              parameter-name:
+                type: array
+                items:
+                  type: string
+              crs:
+                type: string
+              f:
+                type: string
+  responses:
+    collection:
+      description: Metadata about the {collectionId} collection shared by this API
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/collection'
+        text/html:
+          schema:
+            type: string
+    collections:
+      description: Metadata about the Environmental data collections shared by this API
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/collections'
+        text/html:
+          schema:
+            type: string
+    conformance:
+      description: URIs of all requirements classes supported by the server
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/confClasses'
+        text/html:
+          schema:
+            type: string
+    exception:
+      description: An error occured.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/html:
+          schema:
+            type: string
+    landingpage:
+      description: links to the API capabilities
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/landingPage'
+        text/html:
+          schema:
+            type: string
+    '200':
+      description: Data ranges required to construct valid queries for the choosen data collection
+      content:
+        application/prs.coverage+json:
+          schema:
+            $ref: '#/components/schemas/coveragejson'
+        application/geo+json:
+          schema:
+            $ref: '#/components/schemas/edrFeatureCollectionGeoJSON'
+        application/x-netcdf:
+          schema:
+            type: object
+        text/xml:
+          schema:
+            type: string
+    '202':
+      description: Data request still being processed
+    '308':
+      description: Request will take a significant time to process
+    '400':
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/xml: {}
+    '404':
+      description: Requested data not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/xml: {}
+    '413':
+      description: Requested data volume to large to be handled by this service.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/exception'
+        text/xml: {}
+    instances:
+      description: Metadata about the instance of {collectionId} collection shared by this API
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/instances'
+        text/html:
+          schema:
+            type: string
+    items:
+      description: List of pre-existing items available for retrieval
+      content:
+        application/geo+json:
+          schema:
+            $ref: '#/components/schemas/edrFeatureCollectionGeoJSON'
+        application/json:
+          schema:
+            type: string
+        text/xml:
+          schema:
+            type: string

@@ -1,7 +1,14 @@
+import type {
+  Feature as F,
+  Geometry,
+  FeatureCollection as FC,
+  GeoJsonProperties,
+  BBox,
+} from 'geojson';
 export type Link = {
   href: string;
   rel: string;
-  title: string;
+  title?: string;
   hreflang?: string;
   length?: string;
   templated?: boolean;
@@ -10,7 +17,7 @@ export type Link = {
 };
 
 export type LandingPage = {
-  links: Array<Link>;
+  links: Link[];
   title?: string;
   description?: string;
 };
@@ -20,17 +27,14 @@ export interface Collection extends LandingPage {
   storageCrsCoordinateEpoch?: number;
   crs: Array<string>;
   storageCrs?: string;
-  itemType?: string | "feature";
+  itemType?: string | 'feature';
   extent: Extent;
 }
-
-export type Bbox =
-  [number, number, number, number] | [number, number, number, number, number, number];
 
 export type Interval = [string | null, null | string];
 export interface Extent {
   spatial: {
-    bbox: Array<Bbox>;
+    bbox: BBox[];
     crs: string;
   };
   temporal: {
@@ -39,37 +43,24 @@ export interface Extent {
   };
 }
 
-export type GeoJsonProperties = { [x: string]: any };
 export interface Feature<
-  G extends GeoJSON.Geometry = GeoJSON.Geometry,
+  G extends Geometry = Geometry,
   P extends GeoJsonProperties = GeoJsonProperties,
-> extends GeoJSON.Feature<G, P> {
+> extends F<G, P> {
   id?: string | number;
-  links?: Array<Link>;
+  links?: Link[];
 }
 
 export interface ConformancePage {
-  links?: Array<Link>;
-  conformsTo: Array<string>;
+  links?: Link[];
+  conformsTo: string[];
 }
 
 export interface FeatureCollection<
-  G extends GeoJSON.Geometry = GeoJSON.Geometry,
+  G extends Geometry = Geometry,
   P extends GeoJsonProperties = GeoJsonProperties,
-> extends GeoJSON.FeatureCollection<G, P> {
+> extends FC<G, P> {
   numberMatched: number;
   numberReturned: number;
   timeStamp: string;
 }
-
-export type Datetime = {
-  min?: string;
-  max?: string;
-  values?: string[];
-};
-
-export type Elevation = {
-  min?: number;
-  max?: number;
-  values?: number[];
-};

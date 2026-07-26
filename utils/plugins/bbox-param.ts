@@ -1,7 +1,7 @@
 import type { ExegesisPlugin, ExegesisPluginContext } from "exegesis-express";
 import bboxPolygon from "@turf/bbox-polygon";
 import type { Bbox } from "../types.d.ts";
-import { reproject } from "../projection.ts";
+import { reproject } from "../reprojection.ts";
 /**
  *
  * @description if on features, use a plugin to validate bbox-crs
@@ -15,7 +15,7 @@ export default function bbox(crsField: string = "crs"): ExegesisPlugin {
       postSecurity: async (ctx: ExegesisPluginContext) => {
         const params = await ctx.getParams();
         if (!params.query.bbox) return;
-
+console.log(params.query)
         const crs = ctx["ectx"][crsField];
         const storageCrs = ctx["ectx"]["dataset"]["storageCrs"];
         const bbox: Bbox = params.query.bbox;
@@ -26,6 +26,7 @@ export default function bbox(crsField: string = "crs"): ExegesisPlugin {
           xyComponent = [bbox[0], bbox[1], bbox[3], bbox[4]];
           ctx["ectx"]["z"] = { min: bbox[2], max: bbox[5] };
         }
+        console.log(xyComponent)
         const transformed = reproject(
           crs,
           storageCrs

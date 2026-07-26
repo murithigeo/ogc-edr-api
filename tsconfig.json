@@ -3,6 +3,10 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "resolveJsonModule": true,
-    "module": "nodenext"
-  }
+    "module": "nodenext",
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "lib": ["ES2024"],
+    "noImplicitThis": true,
+  },
 }

@@ -1,6 +1,6 @@
 import { expect, describe, it, beforeEach } from "vitest";
 import { MAX_COLLECTIONS_INSTANCES, TEST_URL_BASE } from "../index.ts";
-import { crs } from "../../utils/projection.ts";
+import { crs } from "../../utils/reprojection.ts";
 
 const collections: {
   id: string;

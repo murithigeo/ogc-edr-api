@@ -15,6 +15,8 @@ export default function datetime(): ExegesisPlugin {
         let datetime: string | undefined = params.query?.datetime;
         if (!datetime) return;
         datetime = datetime.replace(" ", "+");
+        // console.log(datetime)
+        // use ajv instead
         let max: string | undefined;
         let min: string | undefined;
         let values: string[] | undefined;

@@ -1,5 +1,5 @@
 import type { ExegesisPlugin, ExegesisPluginContext } from "exegesis-express";
-import { crs } from "../projection.ts";
+import { crs } from "../reprojection.ts";
 /**
  * @description validates crs query param uris before controller
  */

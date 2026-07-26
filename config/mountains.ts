@@ -25,11 +25,13 @@ const features: Array<Feature<GeoJSON.Point, {
   .map((p) => ({
     ...p,
     properties: { ...p.properties, countries: p.properties.countries || [] },
+    id: p.properties.name
   }))
   .sort((a, b) =>
     a.properties.name.localeCompare(b.properties.name)
-  );
+  )
 
+  // TODO, data from fapar is leaking into props
 export default {
   id: "mountains",
   crs: ["OGC:CRS84", "EPSG:4326"],
@@ -160,21 +162,23 @@ export default {
       handleOne(opts) {
         const item = features
           .filter(instanceIdChecker(opts.instanceId))
-          .find((c) => c.properties.name === opts.instanceId);
+          .find((c) => c.properties.name === opts.itemId);
         if (!item) throw new HttpError(404, "no such item");
         return Promise.resolve(reproject("OGC:CRS84", opts.crs)(item));
       },
       handleAll(opts) {
+        // TODO fix scenario where limit does nothing especially at slice
         const matched = features
           .filter(instanceIdChecker(opts.instanceId))
           .filter(geometryIntersects(opts.bbox));
         const limit = opts.limit || matched.length;
         const offset = opts.offset || 0;
+        console.log(limit,offset)
         return Promise.resolve({
           timeStamp: new Date().toJSON(),
           numberMatched: matched.length,
           numberReturned: numberReturned(matched.length, limit, offset),
-          features: matched.slice(limit, offset + limit),
+          features: matched.slice(offset, offset + limit),
           type: "FeatureCollection",
         });
       },
