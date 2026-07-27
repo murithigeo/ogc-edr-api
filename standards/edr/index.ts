@@ -35,8 +35,19 @@ export const edr = middleware(path.resolve(import.meta.dirname, 'edr.yaml'), {
   },
 });
 
+app.get('/conformance/', (req, res, next) => {
+  let [url, querystring] = req.url.split('?');
+  console.log({ url });
+  if (url === '/conformance/') {
+    url = '/conformance';
+    if (querystring) url += `?${querystring}`;
+    console.log({ url2: url });
+    res.redirect(url);
+  }
+  next();
+});
 app.use(await edr);
 
 const server = http.createServer(app);
 
-server.listen(3000, () => console.log(`EDR listening on 3000`));
+server.listen(3000, '0.0.0.0', () => console.log(`EDR listening on 3000`));

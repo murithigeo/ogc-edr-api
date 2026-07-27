@@ -1,6 +1,5 @@
 import { HttpError } from 'exegesis';
-import type { Z } from './plugins/z.ts';
-
+export type Z = number[] | Partial<Record<'min' | 'max', number>>;
 /**
  * Given a string
  */

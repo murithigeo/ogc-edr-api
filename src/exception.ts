@@ -4,13 +4,12 @@ import { type HandleErrorFunction, HttpError, ValidationError } from 'exegesis';
  * Convert exegesis Error classes into OGC API Exceptions
  */
 export const handleErrorFunction: HandleErrorFunction = (err) => {
-  console.log(err);
+  console.error(err);
   let status = 500;
   let description = 'Internal Server Error';
   if (err instanceof ValidationError) {
     status = 400;
-
-    description = `Failed to validate request:\n`;
+    description = '';
     for (let i = 0; i < err.errors.length; i++) {
       let error = err.errors[i];
       if (!error.location) continue;

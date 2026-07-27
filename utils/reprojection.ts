@@ -1,14 +1,14 @@
-import proj4 from "proj4";
-import type { Feature, GeoJsonProperties } from "./types.d.ts";
-import type { Geometry, Position } from "geojson";
-import { type Converter, get, toURI, uriproj, load } from "@murithigeo/uriproj";
+import proj4 from 'proj4';
+import type { Position } from 'geojson';
+import { type Converter, get, toURI, uriproj, load } from '@murithigeo/uriproj';
 
 export class Referencing {
   converter: Converter;
   from: string;
   to: string;
   constructor(from: string, to: string) {
-    [this.from, this.to] = [from, to].map(toURI);
+    this.from = toURI(from);
+    this.to = toURI(to);
     this.converter = proj4(get(from)!, get(to)!);
   }
 
@@ -26,19 +26,19 @@ export class Referencing {
 
   geomReproject<T extends GeoJSON.Geometry>(geom: T): T {
     switch (geom.type) {
-      case "Point":
+      case 'Point':
         return this.Point(geom);
-      case "MultiPoint":
+      case 'MultiPoint':
         return this.MultiPoint(geom);
-      case "LineString":
+      case 'LineString':
         return this.LineString(geom);
-      case "MultiLineString":
+      case 'MultiLineString':
         return this.MultiLineString(geom);
-      case "Polygon":
+      case 'Polygon':
         return this.Polygon(geom);
-      case "MultiPolygon":
+      case 'MultiPolygon':
         return this.MultiPolygon(geom);
-      case "GeometryCollection":
+      case 'GeometryCollection':
         return this.GeometryCollection(geom);
     }
   }
@@ -64,13 +64,13 @@ export class Referencing {
     return v;
   }
   Polygon(v: GeoJSON.Polygon): GeoJSON.Polygon {
-    v = { ...this.MultiLineString({ ...v, type: "MultiLineString" }), type: "Polygon" };
+    v = { ...this.MultiLineString({ ...v, type: 'MultiLineString' }), type: 'Polygon' };
     return v;
   }
   MultiPolygon(v: GeoJSON.MultiPolygon): GeoJSON.MultiPolygon {
     v.coordinates.forEach(
       (coordinates, i, arr) =>
-        (arr[i] = this.Polygon({ type: "Polygon", coordinates }).coordinates),
+        (arr[i] = this.Polygon({ type: 'Polygon', coordinates }).coordinates),
     );
     return v;
   }

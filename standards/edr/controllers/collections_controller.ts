@@ -2,31 +2,75 @@ import type { PromiseController } from 'exegesis';
 import type { Dataset, Extent } from '../../../services/types.d.ts';
 import type { Collection, DataQueries } from '../../../src/types/edr.d.ts';
 import services from '../../../services/index.ts';
-import type { Link } from '../../../utils/types.js';
 import { get } from '@murithigeo/uriproj';
-import { contentTypes, type ContentTypeNegotiator } from '../../../src/links/content-types.ts';
+import { contentTypes, type ContentTypeNegotiator } from '../../../src/content-types.ts';
+import { Links } from '../../../src/links.ts';
 
 export default {
   listCollections: async (ctx) => {
-    const data = Object.entries(services)
-      .map(async ([, dataset]) => ({
-        ...dataset,
-        extent: await dataset.queryExtent(),
-      }))
-      .map(async (dataset) => toCollection(await dataset, undefined))
-      .map(async (collection) => updateLinks(await collection));
+    const datasets = Object.values(services).map(async (data) => ({
+      ...data,
+      extent: await data.extent,
+    }));
+
+    const collections = (await Promise.all(datasets)).map((set) =>
+      toCollection(set, { collectionId: set.id, hostname: ctx.api.serverObject?.url! }),
+    );
+    const links = new Links(ctx);
+    ctx.res.status(200).json({
+      collections,
+      links: collections.flatMap(({ id }) => links.collection(id).self().alternates([]).links),
+    });
   },
-  getCollection: (ctx) => {},
-  listInstances: (ctx) => {},
-  getInstance: (ctx) => {},
+  getCollection: async (ctx) => {
+    const set = services[ctx.params.path.collectionId];
+    const json = toCollection(
+      { ...set, extent: await set.extent },
+      { collectionId: set.id, hostname: ctx.api.serverObject?.url! },
+    );
+    ctx.res.status(200).json(json);
+  },
+  listInstances: async (ctx) => {
+    const set = services[ctx.params.path.collectionId];
+    const extents = await set.data_queries.instances.handler(undefined);
+    const instances = extents
+      .map((extent) => ({ ...set, extent }))
+      .map((dataset) => {
+        const { id: instanceId } = dataset.extent;
+        return toCollection(
+          { ...dataset, id: instanceId },
+          { collectionId: set.id, hostname: ctx.api.serverObject?.url!, instanceId },
+        );
+      });
+    const links = new Links(ctx);
+    ctx.res.status(200).json({
+      instances,
+      links: extents.flatMap(
+        (instance) => links.collection(set.id, instance.id).self().alternates([]).links,
+      ),
+    });
+  },
+  getInstance: async (ctx) => {
+    const dataset = services[ctx.params.path.collectionId];
+    const [extent] = await dataset.data_queries.instances.handler(ctx.params.path.instanceId);
+    const json = toCollection(
+      { ...dataset, extent },
+      {
+        collectionId: dataset.id,
+        hostname: ctx.api.serverObject?.url!,
+        instanceId: extent.id,
+      },
+    );
+    ctx.res.json(json);
+  },
 } satisfies Record<string, PromiseController>;
 
-async function toCollection(
+function toCollection(
   dataset: Dataset & {
-    extent: Extent;
+    extent: Awaited<Extent>;
   },
-  instanceId?: string,
-): Promise<Collection> {
+  options: Omit<Options, 'default_output_format'>,
+): Collection {
   const {
     output_formats,
     data_queries: queries,
@@ -37,11 +81,14 @@ async function toCollection(
   } = dataset;
   extent.vertical?.values.sort((a, b) => a - b);
   extent.temporal?.sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-  const { data_queries, ...others } = getDataQueries(queries, output_formats[0]);
-  if (instanceId) delete data_queries.instances;
-  return {
+  const { data_queries, ...others } = getDataQueries(queries, {
+    ...options,
+    default_output_format: dataset.output_formats[0],
+  });
+
+  const links = Object.values(data_queries).map(({ link: { variables, ...link } }) => link);
+  const collection: Collection = {
     ...rest,
-    id: instanceId || dataset.id,
     output_formats: Array.from(new Set([...dataset.output_formats, ...others.output_formats])),
     extent: {
       spatial: {
@@ -53,7 +100,7 @@ async function toCollection(
         ? {
             interval: [
               [
-                extent.vertical.values[0].toString(),
+                extent.vertical.values[0]?.toString(),
                 extent.vertical?.values.at(-1)?.toString() || null,
               ],
             ],
@@ -77,38 +124,49 @@ async function toCollection(
       {},
     ),
     data_queries,
-    links: [],
+    links,
     distanceunits: Array.from(new Set([...distanceunits, ...others.distanceunits])),
   };
+  return collection;
 }
-
-function getDataQueries(queries: Dataset['data_queries'], def_o_format: ContentTypeNegotiator) {
+interface Options {
+  default_output_format: ContentTypeNegotiator;
+  hostname: string;
+  instanceId?: string;
+  collectionId: string;
+}
+function getDataQueries(queries: Dataset['data_queries'], options: Options) {
   const data_queries: DataQueries = {};
   const output_formats: string[] = [];
   const distanceunits: string[] = [];
   for (const query_type of Object.keys(queries) as Array<keyof DataQueries>) {
-    const { handler: _, crs, ...rest } = queries[query_type]!;
+    //@ts-expect-error defaultInstanceId
+    const { handler: _, defaultInstanceId: __, crs, ...rest } = queries[query_type]!;
     if ('within_units' in rest && rest.within_units) distanceunits.push(...rest['within_units']);
     if ('height_units' in rest && rest.height_units) distanceunits.push(...rest['height_units']);
     if ('width_units' in rest && rest.width_units) distanceunits.push(...rest['width_units']);
 
+    let href = `${options.hostname}/collections/${options.collectionId}`;
+    if (options.instanceId) {
+      if (query_type === 'instances') continue;
+      href += `/instances/${options.instanceId}`;
+    }
+    href += `/${query_type}`;
     data_queries[query_type] = {
       link: {
-        href: query_type,
+        href: new URL(href).toJSON(),
         variables: {
           ...rest,
+          //@ts-expect-error
           query_type,
+          //@ts-expect-error
           crs_details: crs?.map((crs) => ({ crs, wkt: get(crs)! })),
         },
         rel: ['locations', 'items'].includes(query_type) ? 'items' : 'data',
-        type: contentTypes[rest.default_output_format || def_o_format],
+        type: contentTypes[rest.default_output_format || options.default_output_format],
       },
     };
   }
 
   return { data_queries, output_formats, distanceunits };
-}
-
-function updateLinks(collection: Collection): Collection {
-  return collection;
 }

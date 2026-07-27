@@ -8,11 +8,16 @@ import type {
   Point,
   Polygon,
 } from 'geojson';
-import type { EdrFeature, EdrFeatureCollection, Parameter, FeatureCollection } from '../types.d.ts';
+import type {
+  EdrFeature,
+  EdrFeatureCollection,
+  Parameter,
+  FeatureCollection,
+} from '../src/types/edr.d.ts';
 import type { Coverage, CoverageCollection, Domain, NdArray } from 'coveragejson';
 import type { Length } from 'convert';
 import type { CoverageJSON } from 'coveragejson';
-import type { ContentTypeNegotiator } from '../src/links/content-types.ts';
+import type { ContentTypeNegotiator } from '../src/content-types.ts';
 
 export interface Dataset {
   id: string;
@@ -30,7 +35,7 @@ export interface Dataset {
       'id' | 'unit' | 'data-type' | 'observedProperty' | 'description' | 'label' | 'measurementType'
     >
   >;
-  queryExtent: () => Promise<Extent> | Extent;
+  get extent(): Promise<Extent> | Extent;
   data_queries: DataQueryConfig;
 }
 
@@ -53,7 +58,7 @@ interface BaseConfig<T extends ContentTypeNegotiator = ContentTypeNegotiator> {
   title?: string;
 }
 export interface QueryEvent<T extends ContentTypeNegotiator = ContentTypeNegotiator> {
-  routePath: string; // Incase you want to limit queries on collections/{collectionId}/{queryType} or .../istances
+  path: string; // Incase you want to limit queries on collections/{collectionId}/{queryType} or .../istances
   datetime?: string | Partial<Record<'min' | 'max', string>>;
   bbox?: BBox;
   crs: string;
@@ -81,10 +86,12 @@ export interface LocationsConfig<
   T extends ContentTypeNegotiator = ContentTypeNegotiator,
 > extends BaseConfig<T> {
   multi?: boolean;
-  handler(e: Omit<QueryEvent<T>, 'parameter-name'>): Promise<FeatureCollection> | FeatureCollection;
-  handler(
+  queryAll(
+    e: Omit<QueryEvent<T>, 'parameter-name'>,
+  ): Promise<EdrFeatureCollection> | EdrFeatureCollection;
+  queryOne(
     e: Omit<QueryEvent<T>, 'bbox' | 'z'> & {
-      locationId: string;
+      locId: string;
       limit?: number;
       offset?: number;
     },
@@ -114,7 +121,7 @@ export interface RadiusConfig<
   handler: (
     e: QueryEvent<T> & {
       within: number;
-      'within-units': Length; // Or convert to meters
+      'within-units'?: Extract<Length, 'meters'>; // Or convert to meters
       coords: Point | MultiPoint;
     },
   ) => Promise<Return>;
@@ -161,11 +168,11 @@ export interface PositionConfig<
 export interface TrajectoryConfig<
   T extends ContentTypeNegotiator = ContentTypeNegotiator,
 > extends BaseConfig<T> {
-  handler: (
+  handler(
     e: QueryEvent<T> & {
       coords: LineString | MultiLineString;
     },
-  ) => Promise<Return> | Return;
+  ): Promise<Return> | Return;
 }
 export interface InstancesConfig<
   T extends ContentTypeNegotiator = ContentTypeNegotiator,
@@ -175,6 +182,7 @@ export interface InstancesConfig<
    */
   defaultInstanceId: 'Africa';
   handler(instanceId: undefined | string): Promise<Extent[]> | Extent[];
+
   hasInstanceId(instanceId: string): Promise<boolean> | boolean;
 }
 /**

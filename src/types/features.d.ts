@@ -47,7 +47,7 @@ export interface Feature<
   G extends Geometry = Geometry,
   P extends GeoJsonProperties = GeoJsonProperties,
 > extends F<G, P> {
-  id?: string | number;
+  id: string | number;
   links?: Link[];
 }
 
@@ -59,8 +59,11 @@ export interface ConformancePage {
 export interface FeatureCollection<
   G extends Geometry = Geometry,
   P extends GeoJsonProperties = GeoJsonProperties,
-> extends FC<G, P> {
+> {
+  type: 'FeatureCollection';
+  features: Feature<G, P>[];
+  timeStamp: string;
   numberMatched: number;
   numberReturned: number;
-  timeStamp: string;
+  links?: Link[];
 }

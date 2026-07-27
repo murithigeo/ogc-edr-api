@@ -18,15 +18,27 @@ import {
   Point,
   Polygon,
 } from 'wkx';
+import { contentTypes, type ContentTypeNegotiator } from '../../src/content-types.ts';
 
 export default function (): ExegesisPlugin {
   return {
     info: { name: 'x-exegesis-edr-plugin' },
+
     makeExegesisPlugin: () => ({
       postSecurity: async (ctx: ExegesisPluginContext) => {
+        // todo check if it would be better elsewhere
+        const origin = 'http://' + ctx.req.headers.host;
+        ctx.api.serverObject = ctx.api.serverObject || { url: origin };
         let { path, query }: { path: PathParams; query: QueryParams } = await ctx.getParams();
         let { f = 'JSON', crs = toURI('OGC:CRS84'), bbox, z, datetime, coords, ...rest } = query;
         let { collectionId, instanceId = '' } = path;
+        for (const [id, ct] of Object.entries(contentTypes)) {
+          if (ct !== f) continue;
+          f = id;
+          break;
+        }
+        query.f = f;
+        ctx.res.set('content-type', contentTypes[f as ContentTypeNegotiator]);
 
         if (!('collectionId' in path)) return; // Do no validation for format
         const collection = services[collectionId!];
@@ -40,13 +52,16 @@ export default function (): ExegesisPlugin {
           const existing = instances.hasInstanceId(instanceId);
           if (!existing) throw ctx.makeError(404, 'Requested instance does not exist');
         }
+
         const { operationId } = ctx.api.operationObject!;
+        if (!operationId?.includes(':')) return;
         const [method, query_type] = operationId?.split(':')! as [
           'get' | 'post',
           keyof DataQueries,
           'collection' | 'instance',
         ];
-        if (query_type === 'instances') return;
+        // if (query_type === 'instances') return; // What do
+
         if (method === 'post') {
           const body = await ctx.getRequestBody();
           query = { ...query, ...body };
@@ -57,8 +72,9 @@ export default function (): ExegesisPlugin {
           if (query['parameter-name']) {
             if (typeof query['parameter-name'] === 'string')
               query['parameter-name'] = Array.from(new Set(query['parameter-name'].split(',')));
-            for (let name in query['parameter-name']) {
-              if (!validNames.includes(name)) throw ctx.makeError(400, 'invalid parameter-name');
+            for (let name of query['parameter-name']) {
+              if (validNames.includes(name)) continue;
+              throw ctx.makeError(400, `invalid parameter-name:${name}`);
             }
           } else query['parameter-name'] = validNames;
         }
@@ -66,17 +82,25 @@ export default function (): ExegesisPlugin {
         const queryConfig = collection.data_queries[query_type];
         if (!queryConfig)
           throw ctx.makeError(404, `collection does not support ${query_type} queries`);
+        if (f) {
+          const { output_formats = collection.output_formats } = queryConfig;
+          if (!output_formats.includes(f.toUpperCase() as ContentTypeNegotiator)) {
+            throw ctx.makeError(400, 'invalid output format');
+          }
+        }
         if ('crs' in query) {
           const { crs: crsList = collection.crs } = queryConfig;
           if (!crsList.includes(crs)) throw ctx.makeError(400, 'Invalid CRS argument');
+          ctx.res.set('content-crs', `<${crs}>`);
         }
         const referencing = new Referencing(crs, collection.storageCrs);
-
         if (bbox) {
           if (![4, 6].includes(bbox.length)) {
             throw ctx.makeError(400, 'bbox must have 4 or 6 elements');
           }
           if (bbox.length === 6) {
+            if (z) throw ctx.makeError(400, '6 item bbox incompatible with z parameter');
+
             let [, , zmin, , , zmax] = bbox;
             if (!z) z = [zmin, zmax].join('/');
             bbox = [bbox[0], bbox[1], bbox[3], bbox[4]];
@@ -85,6 +109,8 @@ export default function (): ExegesisPlugin {
           [bbox[0], bbox[1]] = referencing.crs([bbox[0], bbox[1]]);
           [bbox[2], bbox[3]] = referencing.crs([bbox[2], bbox[3]]);
         }
+        const isUndefined = <T>(v: any): v is undefined => v === undefined;
+
         // Parse coords before parsing z and datetime
         if (coords) {
           const geomTypes = {
@@ -114,7 +140,6 @@ export default function (): ExegesisPlugin {
           }
           const measures: number[] = [];
           const elevations: number[] = [];
-          const isUndefined = (v: any) => v === undefined;
           const validatePoint = (v: Point) => {
             if (isUndefined(v.x) || isUndefined(v.y)) {
               throw ctx.makeError(400, `WKT must not be EMPTY`);
@@ -124,10 +149,14 @@ export default function (): ExegesisPlugin {
             }
             if (!isUndefined(v.z)) {
               if (isNaN(v.z)) throw ctx.makeError(400, `WKT MUST only contain Numeric values`);
+              if (z) throw ctx.makeError(400, `Z-dim Geometry and z parameter are incompatible`);
               elevations.push(v.z);
             }
             if (!isUndefined(v.m)) {
               if (isNaN(v.m)) throw ctx.makeError(400, `WKT MUST only contain Numeric values`);
+              if (datetime) {
+                throw ctx.makeError(400, `M-dim Geometry and datetime parameter are incompatible`);
+              }
               measures.push(v.m);
             }
           };
@@ -192,6 +221,15 @@ export default function (): ExegesisPlugin {
           }
           query.within = convert(rest.within!, rest['within-units']!).to('meters');
           query['within-units'] = 'meters';
+        }
+        if (!isUndefined(rest['resolution-x'])) {
+          query['resolution-x'] = Number(rest['resolution-x']);
+        }
+        if (!isUndefined(rest['resolution-y'])) {
+          query['resolution-y'] = Number(rest['resolution-y']);
+        }
+        if (!isUndefined(rest['resolution-z'])) {
+          query['resolution-z'] = Number(rest['resolution-z']);
         }
       },
     }),

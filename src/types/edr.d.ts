@@ -58,8 +58,11 @@ export interface EdrFeature<
 export interface EdrFeatureCollection<
   G extends Geometry = Geometry,
   P extends EdrGeoJsonProperties = EdrGeoJsonProperties,
-> extends FeatureCollection<G, P> {}
+> extends FeatureCollection<G, P> {
+  parameters: PR[];
+}
 
+export type EdrGeoJSON = EdrFeatureCollection | EdrFeature;
 export type Extent = {
   spatial: Ext['spatial'] & {
     crs?: string;
