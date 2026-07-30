@@ -1,4 +1,4 @@
-@SERVER=http://localhost:3000
+@SERVER=http://host.docker.internal:3000
 @crs=crs=http://www.opengis.net/def/crs/EPSG/0/4326
 @collectionId=openmeteo-hourly
 @instanceId=2025-12-01T00:00
@@ -18,13 +18,15 @@ GET {{SERVER}}/api
 GET {{SERVER}}/api.html
 
 ###
+GET {{SERVER}}/conformance/
+###
 GET {{SERVER}}/collections?f=yaml
 
 ###
-GET {{SERVER}}/collections/{{collectionId}}
+GET {{SERVER}}/collections/mountains
 
 ###
-GET {{SERVER}}/collections/{{collectionId}}/position
+GET {{SERVER}}/collections/mountains/position
     ?f={{f}}
     &coords={{point}}
     &parameter-name={{parameter-name}}
@@ -112,11 +114,11 @@ Content-Type: application/json
 }
 
 ###
-GET {{SERVER}}/collections/{{collectionId}}/cube
+GET {{SERVER}}/collections/mountains/cube
     ?bbox=-180,-90,180,90
     &f={{f}}
     &parameter-name={{parameter-name}}
-    &datetime=2025-12-01T13:00
+    &datetime=2025-12-01T13:00+12:00
 
 ###
 POST {{SERVER}}/collections/{{collectionId}}/cube
@@ -129,18 +131,16 @@ Content-Type: application/json
 }
 
 ###
-GET {{SERVER}}/collections/{{collectionId}}/items
-    ?bbox=-180,-90,180,90
-    &f={{f}}
-    &parameter-name={{parameter-name}}
+GET {{SERVER}}/collections/mountains/items
 ###
 GET {{SERVER}}/collections/{{collectionId}}/items/{{itemId}}
     ?f={{f}}
     &parameter-name={{parameter-name}}
 
 ###
-GET {{SERVER}}/collections/nighttimelight/locations
-    ?bbox=-180,-90,180,90
+GET http://host.docker.internal:3000/collections/mountains/locations
+     ?bbox=-77.0147260%2C97.5504510%2C55.0115610%2C-10.7743720
+    &datetime=2026-07-28T16:09:00+03:00
 
 ### 
 GET {{SERVER}}/collections/{{collectionId}}/locations/{{locationId}}
@@ -152,7 +152,7 @@ GET {{SERVER}}/collections/{{collectionId}}/instances
         ?bbox=-53.1546130%2C-176.1764470%2C74.6335530%2C179.3666670
 
 ###
-GET {{SERVER}}/collections/{{collectionId}}/instances/2025-12-01T00:00
+GET {{SERVER}}/collections/mountains/instances/
 
 ###
 GET {{SERVER}}/collections/{{collectionId}}/instances/{{instanceId}}/locations

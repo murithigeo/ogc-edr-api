@@ -1,5 +1,5 @@
 import type { ExegesisContext } from 'exegesis-express';
-import type { Link } from './types/features.js';
+import type { Link } from './types/features.d.ts';
 import { contentTypes, type ContentTypeNegotiator } from './content-types.ts';
 
 export class Links {
@@ -15,8 +15,8 @@ export class Links {
   instanceId?: string;
   cache: Set<Link>;
   constructor(ctx: ExegesisContext) {
-    const { collectionId, instanceId, itemId, locId } = ctx.params.path;
-    this.origin = ctx.api.serverObject?.url!;
+    const { collectionId, instanceId } = ctx.params.path;
+    this.origin = ctx.api.serverObject!.url;
     this.pathname = ctx.req.url!;
     this.format = ctx.params.query.f;
     this.url = new URL(this.origin + this.pathname).toJSON();
@@ -35,6 +35,9 @@ export class Links {
       rel: 'conformance',
     });
     return this;
+  }
+  private set link(link: Link) {
+    this.cache.add(structuredClone(link));
   }
   serviceDoc(): this {
     this.cache.add({
@@ -56,16 +59,17 @@ export class Links {
     return this;
   }
   self(): this {
-    console.log(this.format);
+    const url = new URL(this.url);
+    url.searchParams.set('f', this.format);
     this.cache.add({
       title: 'This document',
-      href: new URL(this.url).toJSON(),
+      href: url.toJSON(),
       type: contentTypes[this.format],
       rel: 'self',
     });
     return this;
   }
-  alternates(alternates: ContentTypeNegotiator[]): this {
+  alternates(...alternates: ContentTypeNegotiator[]): this {
     for (const f of alternates) {
       if (f === this.format) continue;
       const url = new URL(this.url);
@@ -105,7 +109,7 @@ export class Links {
   /**
    * Assumes you are at /collections/{collectionId}/[instances/{instanceId}/]
    */
-  items(collectionId: string): this {
+  items(collectionId = this.collectionId): this {
     this.cache.add({
       title: 'View Items',
       href: new URL(`${this.origin}/collections/${collectionId}/items`).toString(),
@@ -122,12 +126,12 @@ export class Links {
     let pathname = `/collections/${collectionId}`;
     if (this.instanceId) pathname += `/instances/${this.instanceId}`;
     pathname += `/items/${itemId!}`;
-    this.cache.add({
+    this.link = {
       title: 'View Item',
       href: new URL(this.origin + pathname).toString(),
       rel: 'items',
       type: contentTypes.GEOJSON,
-    });
+    };
     return this;
   }
 
@@ -161,7 +165,7 @@ export class Links {
     let href = this.origin + `/collections/${this.collectionId}`;
     if (this.instanceId) href += `/instances/${this.instanceId}`;
     href += `/locations/${locationId}`;
-    return href;
+    return encodeURI(href);
   }
   get links() {
     return Array.from(this.cache);

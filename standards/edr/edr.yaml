@@ -1422,7 +1422,7 @@ components:
           type: string
           title: Label
           description: A label such as a site name or other text to use on a link.
-          default: ''
+          #default: ''
           example:
             - Site A
         edrqueryendpoint:
@@ -2710,14 +2710,14 @@ components:
       schema:
         oneOf:
           - items:
-              minItems: 4
-              maxItems: 4
               type: number
+            minItems: 4
+            maxItems: 4
             type: array
           - items:
-              minItems: 6
-              maxItems: 6
               type: number
+            minItems: 6
+            maxItems: 6
             type: array
       style: form
       explode: false
@@ -2750,14 +2750,14 @@ components:
       schema:
         oneOf:
           - items:
-              minItems: 4
-              maxItems: 4
               type: number
+            minItems: 4
+            maxItems: 4
             type: array
           - items:
-              minItems: 6
-              maxItems: 6
               type: number
+            minItems: 6
+            maxItems: 6
             type: array
       style: form
       explode: false

@@ -1,6 +1,7 @@
 import proj4 from 'proj4';
-import type { Position } from 'geojson';
-import { type Converter, get, toURI, uriproj, load } from '@murithigeo/uriproj';
+import type { GeoJsonProperties, Geometry, Position } from 'geojson';
+import { type Converter, get, toURI, load } from '@murithigeo/uriproj';
+import type { Feature } from '../src/types/features.d.ts';
 
 export class Referencing {
   converter: Converter;
@@ -24,24 +25,15 @@ export class Referencing {
     return new Referencing(from, to);
   }
 
-  geomReproject<T extends GeoJSON.Geometry>(geom: T): T {
-    switch (geom.type) {
-      case 'Point':
-        return this.Point(geom);
-      case 'MultiPoint':
-        return this.MultiPoint(geom);
-      case 'LineString':
-        return this.LineString(geom);
-      case 'MultiLineString':
-        return this.MultiLineString(geom);
-      case 'Polygon':
-        return this.Polygon(geom);
-      case 'MultiPolygon':
-        return this.MultiPolygon(geom);
-      case 'GeometryCollection':
-        return this.GeometryCollection(geom);
-    }
+  geometry<T extends Geometry>(geom: T): T {
+    if (this.to === this.from) return geom;
+    const fn = this[geom.type];
+    return fn.bind(this)(geom) as T;
   }
+  feature<G extends Geometry, P extends GeoJsonProperties>(feat: Feature<G, P>): Feature<G, P> {
+    return { ...feat, geometry: this.geometry(feat.geometry) };
+  }
+
   Point(v: GeoJSON.Point): GeoJSON.Point {
     v.coordinates = this.crs(v.coordinates);
     return v;
@@ -64,20 +56,15 @@ export class Referencing {
     return v;
   }
   Polygon(v: GeoJSON.Polygon): GeoJSON.Polygon {
-    v = { ...this.MultiLineString({ ...v, type: 'MultiLineString' }), type: 'Polygon' };
+    v.coordinates = v.coordinates.map((exterior) => exterior.map((verts) => this.crs(verts)));
     return v;
   }
   MultiPolygon(v: GeoJSON.MultiPolygon): GeoJSON.MultiPolygon {
-    v.coordinates.forEach(
-      (coordinates, i, arr) =>
-        (arr[i] = this.Polygon({ type: 'Polygon', coordinates }).coordinates),
-    );
+    v.coordinates = v.coordinates.map((ext) => ext.map((int) => int.map((pos) => this.crs(pos))));
     return v;
   }
   GeometryCollection(v: GeoJSON.GeometryCollection): GeoJSON.GeometryCollection {
-    v.geometries.forEach((v, i, arr) => {
-      arr[i] = this[v.type](v);
-    });
+    v.geometries = v.geometries.map((geom) => this.geometry(geom));
     return v;
   }
 }

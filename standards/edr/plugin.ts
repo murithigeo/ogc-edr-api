@@ -3,9 +3,9 @@ import { type ExegesisPlugin } from 'exegesis';
 import type { ExegesisPluginContext } from 'exegesis-express';
 import type { BBox } from 'geojson';
 import services from '../../services/index.ts';
-import type { DataQueries } from '../../src/types/edr.js';
+import type { DataQueries } from '../../src/types/edr.d.ts';
 import { convert, type Length } from 'convert';
-import type { CorridorConfig, RadiusConfig } from '../../services/types.js';
+import type { CorridorConfig, RadiusConfig } from '../../services/types.d.ts';
 import { Referencing } from '../../utils/reprojection.ts';
 import zParse from '../../src/z-parse.ts';
 import datetimeParse from '../../src/datetime-parse.ts';
@@ -18,125 +18,128 @@ import {
   Point,
   Polygon,
 } from 'wkx';
-import { contentTypes, type ContentTypeNegotiator } from '../../src/content-types.ts';
+import { contentTypes, type ContentTypeNegotiator as Format } from '../../src/content-types.ts';
 
 export default function (): ExegesisPlugin {
   return {
     info: { name: 'x-exegesis-edr-plugin' },
-
     makeExegesisPlugin: () => ({
       postSecurity: async (ctx: ExegesisPluginContext) => {
-        // todo check if it would be better elsewhere
         const origin = 'http://' + ctx.req.headers.host;
         ctx.api.serverObject = ctx.api.serverObject || { url: origin };
-        let { path, query }: { path: PathParams; query: QueryParams } = await ctx.getParams();
+        const [params, body] = await Promise.all([ctx.getParams(), ctx.getRequestBody()]);
+        // eslint-disable-next-line prefer-const
+        let { path, query }: { path: PathParams; query: QueryParams } = params;
+        if (ctx.req.method?.toUpperCase() === 'POST') {
+          query = { ...query, ...body };
+          if (body.bbox) query.bbox = body.bbox.split(',').map(parseFloat);
+        }
+
+        // eslint-disable-next-line prefer-const
         let { f = 'JSON', crs = toURI('OGC:CRS84'), bbox, z, datetime, coords, ...rest } = query;
-        let { collectionId, instanceId = '' } = path;
+        f = f.toUpperCase();
+        const { collectionId, instanceId = '' } = path;
         for (const [id, ct] of Object.entries(contentTypes)) {
           if (ct !== f) continue;
           f = id;
           break;
         }
         query.f = f;
-        ctx.res.set('content-type', contentTypes[f as ContentTypeNegotiator]);
+        ctx.res.set('content-type', contentTypes[f as Format]);
 
         if (!('collectionId' in path)) return; // Do no validation for format
         const collection = services[collectionId!];
         if (!collection) throw ctx.makeError(404, 'No such collection');
 
+        const { crs: crsdets, output_formats, distanceunits, instances } = collection;
         if ('instanceId' in path) {
-          const { instances } = collection.data_queries;
-          if (['', 'default', 'latest'].includes(instanceId)) {
-            instanceId = instances.defaultInstanceId;
-          }
-          const existing = instances.hasInstanceId(instanceId);
-          if (!existing) throw ctx.makeError(404, 'Requested instance does not exist');
+          const exists = await instances.has(instanceId);
+          if (typeof exists === 'string') path.instanceId = exists;
+          if (exists === false) throw ctx.makeError(404, `instance does not exist`);
         }
-
         const { operationId } = ctx.api.operationObject!;
         if (!operationId?.includes(':')) return;
-        const [method, query_type] = operationId?.split(':')! as [
-          'get' | 'post',
-          keyof DataQueries,
-          'collection' | 'instance',
-        ];
+        const [, query_type] = operationId!.split(':') as ['get' | 'post', keyof DataQueries];
         // if (query_type === 'instances') return; // What do
 
-        if (method === 'post') {
-          const body = await ctx.getRequestBody();
-          query = { ...query, ...body };
-          if (body.bbox) query.bbox = body.bbox.split(',').map(parseFloat);
-        }
-        if ('parameter-name' in query) {
-          const validNames = Object.keys(collection.parameters);
-          if (query['parameter-name']) {
-            if (typeof query['parameter-name'] === 'string')
-              query['parameter-name'] = Array.from(new Set(query['parameter-name'].split(',')));
-            for (let name of query['parameter-name']) {
-              if (validNames.includes(name)) continue;
-              throw ctx.makeError(400, `invalid parameter-name:${name}`);
-            }
-          } else query['parameter-name'] = validNames;
-        }
+        const validNames = Object.keys(collection.parameters);
+        if (query['parameter-name']) {
+          if (typeof query['parameter-name'] === 'string')
+            query['parameter-name'] = Array.from(new Set(query['parameter-name'].split(',')));
+          for (const name of query['parameter-name']) {
+            if (validNames.includes(name)) continue;
+            throw ctx.makeError(400, `invalid parameter-name:${name}`);
+          }
+        } else query['parameter-name'] = validNames;
 
         const queryConfig = collection.data_queries[query_type];
+        let [crs_details, formats] = [crsdets, output_formats];
+        if (typeof queryConfig === 'object') {
+          if (queryConfig.crs) crs_details = queryConfig.crs;
+          if (queryConfig.output_formats) formats = queryConfig.output_formats;
+        }
         if (!queryConfig)
           throw ctx.makeError(404, `collection does not support ${query_type} queries`);
-        if (f) {
-          const { output_formats = collection.output_formats } = queryConfig;
-          if (!output_formats.includes(f.toUpperCase() as ContentTypeNegotiator)) {
-            throw ctx.makeError(400, 'invalid output format');
+
+        if (f && !formats.includes(f as Format)) throw ctx.makeError(400, 'invalid output format');
+
+        if (crs === 'native') crs = collection.storageCrs;
+        if (crs) {
+          try {
+            crs = toURI(crs);
+          } catch (error) {
+            let message = 'Unable to process crs Parameter';
+            if (error instanceof Error) ({ message } = error);
+            throw ctx.makeError(400, message);
           }
-        }
-        if ('crs' in query) {
-          const { crs: crsList = collection.crs } = queryConfig;
-          if (!crsList.includes(crs)) throw ctx.makeError(400, 'Invalid CRS argument');
+          if (!crs_details.includes(crs)) throw ctx.makeError(400, 'Invalid CRS argument');
           ctx.res.set('content-crs', `<${crs}>`);
         }
-        const referencing = new Referencing(crs, collection.storageCrs);
+        //@ts-expect-error replacing the crs property with an initialized referencing class
+        query.crs = new Referencing(collection.storageCrs, crs);
+        const toNativeReferencing = new Referencing(crs, collection.storageCrs);
         if (bbox) {
           if (![4, 6].includes(bbox.length)) {
             throw ctx.makeError(400, 'bbox must have 4 or 6 elements');
           }
           if (bbox.length === 6) {
             if (z) throw ctx.makeError(400, '6 item bbox incompatible with z parameter');
-
-            let [, , zmin, , , zmax] = bbox;
+            const [, , zmin, , , zmax] = bbox;
             if (!z) z = [zmin, zmax].join('/');
             bbox = [bbox[0], bbox[1], bbox[3], bbox[4]];
           }
           // Convert to native crs in case of processing error thus reduce compute cost
-          [bbox[0], bbox[1]] = referencing.crs([bbox[0], bbox[1]]);
-          [bbox[2], bbox[3]] = referencing.crs([bbox[2], bbox[3]]);
+          [bbox[0], bbox[1]] = toNativeReferencing.crs([bbox[0], bbox[1]]);
+          [bbox[2], bbox[3]] = toNativeReferencing.crs([bbox[2], bbox[3]]);
         }
-        const isUndefined = <T>(v: any): v is undefined => v === undefined;
+        const isUndefined = (v: unknown): v is undefined => v === undefined;
 
         // Parse coords before parsing z and datetime
         if (coords) {
           const geomTypes = {
-            position: [Point, MultiPoint],
+            position: ['Point', 'MultiPoint'],
             get radius() {
               return this.position;
             },
-            area: [Point, MultiPolygon],
-            trajectory: [LineString, MultiLineString],
+            area: ['Polygon', 'MultiPolygon'],
+            trajectory: ['LineString', 'MultiLineString'],
             get corridor() {
               return this.trajectory;
             },
-            instances: [],
-            items: [],
-            locations: [],
-            cube: [],
-          } satisfies Record<keyof DataQueries, (typeof Geometry)[]>;
+          } as Record<keyof DataQueries, GeoJSON.GeoJsonGeometryTypes[]>;
           let geometry: Geometry;
+          let geojson: GeoJSON.Geometry;
           try {
             geometry = Geometry.parse(coords);
-            for (const i of geomTypes[query_type]) {
-              if (geometry instanceof i) continue;
-              throw Error(`${query_type} does not support this geometry type`);
-            }
-          } catch (err: any) {
-            throw ctx.makeError(400, err.message);
+            //@ts-expect-error Geometry.toGeoJSON returns a plain object
+            geojson = geometry.toGeoJSON();
+          } catch (err) {
+            let message = 'Invalid WKT string';
+            if (err instanceof Error) ({ message } = err);
+            throw ctx.makeError(400, message);
+          }
+          if (!geomTypes[query_type].includes(geojson.type)) {
+            throw ctx.makeError(400, `${query_type} does not support ${geojson.type} geometries`);
           }
           const measures: number[] = [];
           const elevations: number[] = [];
@@ -180,25 +183,29 @@ export default function (): ExegesisPlugin {
           if (!z) z = elevations.join(',');
           if (!datetime) datetime = measures.join(',');
           //@ts-expect-error expects string but is a geojson
-          query.coords = referencing.geomReproject(geometry.toGeoJSON());
+          query.coords = toNativeReferencing.geometry(geojson);
         }
         //@ts-expect-error Expects query.z to be string
         if (z) query.z = zParse(z);
         //@ts-expect-error Expects query.datetime to be string
         if (datetime) query.datetime = datetimeParse(datetime);
         if (query_type === 'corridor') {
-          const {
-            width_units = collection.distanceunits,
-            height_units = collection.distanceunits,
-          } = queryConfig as CorridorConfig;
+          let height_units: Length[] = distanceunits;
+          let width_units: Length[] = distanceunits;
+          if (typeof queryConfig === 'object') {
+            ({ height_units = distanceunits, width_units = distanceunits } = queryConfig as Exclude<
+              CorridorConfig,
+              Function
+            >);
+          }
           if (!width_units.includes(rest['width-units']!)) {
             throw ctx.makeError(400, 'invalid width-units');
           }
           if (!height_units.includes(rest['height-units']!)) {
             throw ctx.makeError(400, 'invalid width-units');
           }
-          query['corridor-width'] = Number(query['corridor-width']);
-          query['corridor-height'] = Number(query['corridor-height']);
+          query['corridor-width'] = Math.abs(Number(query['corridor-width']));
+          query['corridor-height'] = Math.abs(Number(query['corridor-height']));
           if (isNaN(query['corridor-width'])) {
             throw ctx.makeError(400, 'corridor-width must be a number');
           }
@@ -215,11 +222,14 @@ export default function (): ExegesisPlugin {
           query['height-units'] = 'meters';
         }
         if (query_type === 'radius') {
-          const { within_units = collection.distanceunits } = queryConfig as RadiusConfig;
+          let within_units = distanceunits;
+          if (typeof queryConfig === 'object') {
+            ({ within_units = distanceunits } = queryConfig as Exclude<RadiusConfig, Function>);
+          }
           if (!within_units.includes(rest['within-units']!)) {
             throw ctx.makeError(400, 'invalid within-units');
           }
-          query.within = convert(rest.within!, rest['within-units']!).to('meters');
+          query.within = Math.abs(convert(rest.within!, rest['within-units']!).to('meters'));
           query['within-units'] = 'meters';
         }
         if (!isUndefined(rest['resolution-x'])) {
@@ -231,6 +241,8 @@ export default function (): ExegesisPlugin {
         if (!isUndefined(rest['resolution-z'])) {
           query['resolution-z'] = Number(rest['resolution-z']);
         }
+        params.query = query;
+        params.path = path;
       },
     }),
   };

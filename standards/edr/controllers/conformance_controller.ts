@@ -11,10 +11,11 @@ const getConformance: PromiseController = (ctx) =>
       'http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/geojson',
       'http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/json',
       'http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/edr-geojson',
+      'http://www.opengis.net/spec/ogcapi-edr-1/1.0/conf/geojson',
       'http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/covjson',
       'http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/queries',
     ],
-    links: new Links(ctx).alternates([]).links,
+    links: new Links(ctx).alternates('JSON').links,
   });
 
 export default { getConformance };

@@ -1,11 +1,19 @@
-import type { ExegesisOptions, PromiseController } from 'exegesis';
+import type { PromiseController } from 'exegesis';
 import type { ExegesisContext } from 'exegesis-express';
 import services from '../../../services/index.ts';
-import type { EdrFeature, EdrGeoJSON, Feature, FeatureCollection } from '../../../src/types/edr.js';
+import type {
+  EdrFeature,
+  EdrGeoJSON,
+  Feature,
+  FeatureCollection,
+} from '../../../src/types/edr.d.ts';
 import { Links } from '../../../src/links.ts';
-import type { Return } from '../../../services/types.js';
+import type { Return } from '../../../services/types.d.ts';
 import type { CoverageJSON, NdArray } from 'coveragejson';
-import type { ContentTypeNegotiator } from '../../../src/content-types.ts';
+import { contentTypes, type ContentTypeNegotiator } from '../../../src/content-types.ts';
+import buffer from '@turf/buffer';
+import numberReturned from '../../../utils/numberReturned.ts';
+import type { Geometry } from 'geojson';
 export default {
   // radius
   'get:radius:collection': (ctx) => radius(ctx),
@@ -38,145 +46,244 @@ export default {
   'get:position:instance': (ctx) => position(ctx),
   'post:position:instance': (ctx) => position(ctx),
   // items
-  'get:items:collection:list': (ctx) => items(ctx),
-  'post:items:collection:list': (ctx) => items(ctx),
-  'get:items:collection:item': (ctx) => items(ctx),
-  'post:items:collection:item': (ctx) => items(ctx),
-  'get:items:instance:list': (ctx) => items(ctx),
-  'post:items:instance:list': (ctx) => items(ctx),
-  'get:items:instance:item': (ctx) => items(ctx),
-  'post:items:instance:item': (ctx) => items(ctx),
+  'get:items:collection:list': (ctx) => itemsQueryAll(ctx),
+  'post:items:collection:list': (ctx) => itemsQueryAll(ctx),
+  'get:items:collection:item': (ctx) => itemsQueryOne(ctx),
+  'post:items:collection:item': (ctx) => itemsQueryOne(ctx),
+  'get:items:instance:list': (ctx) => itemsQueryAll(ctx),
+  'post:items:instance:list': (ctx) => itemsQueryAll(ctx),
+  'get:items:instance:item': (ctx) => itemsQueryOne(ctx),
+  'post:items:instance:item': (ctx) => itemsQueryOne(ctx),
   // locations
-  'get:locations:collection:list': (ctx) => locations(ctx),
-  'post:locations:collection:list': (ctx) => locations(ctx),
-  'get:locations:collection:item': (ctx) => locations(ctx),
-  'post:locations:collection:item': (ctx) => locations(ctx),
-  'get:locations:instance:list': (ctx) => locations(ctx),
-  'post:locations:instance:list': (ctx) => locations(ctx),
-  'get:locations:instance:item': (ctx) => locations(ctx),
-  'post:locations:instance:item': (ctx) => locations(ctx),
+  'get:locations:collection:list': (ctx) => locationsQueryAll(ctx),
+  'post:locations:collection:list': (ctx) => locationsQueryAll(ctx),
+  'get:locations:collection:item': (ctx) => locationsQueryOne(ctx),
+  'post:locations:collection:item': (ctx) => locationsQueryOne(ctx),
+  'get:locations:instance:list': (ctx) => locationsQueryAll(ctx),
+  'post:locations:instance:list': (ctx) => locationsQueryAll(ctx),
+  'get:locations:instance:item': (ctx) => locationsQueryOne(ctx),
+  'post:locations:instance:item': (ctx) => locationsQueryOne(ctx),
 } satisfies Record<string, PromiseController>;
+
 async function radius(ctx: ExegesisContext) {
-  const { instanceId, collectionId } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.radius!;
-  const { within, coords, f: format, 'parameter-name': pNames, crs } = ctx.params.query;
-  const { path } = ctx.route;
-  const data = await handler({
-    within,
-    coords,
+  const {
+    path: { instanceId, collectionId },
+    query,
+  } = ctx.params;
+  let {
+    output_formats,
+    data_queries: { radius },
+  } = services[collectionId];
+  if (typeof radius === 'function') radius = { fn: radius };
+  if (radius?.output_formats) ({ output_formats } = radius);
+  const data = await radius!.fn({
+    ...query,
+    coords: buffer(query.coords, query.within, { units: query['within-units'] })!.geometry,
     instanceId,
-    format,
-    path,
-    'parameter-name': pNames,
-    crs,
+    f: query.f,
+    path: ctx.route.path,
+    'parameter-name': query['parameter-name'],
+    crs: query.crs,
+    within: query.within,
   });
   return responseHandler(ctx, data, output_formats);
 }
 async function cube(ctx: ExegesisContext) {
-  const { instanceId, collectionId } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.cube!;
-  const { f: format, ...params } = ctx.params.query;
-  const { path } = ctx.route;
-  const data = await handler({ ...params, path, instanceId, format });
+  const {
+    path: { instanceId, collectionId },
+    query,
+  } = ctx.params;
+  let {
+    output_formats,
+    data_queries: { cube },
+  } = services[collectionId];
+  if (typeof cube === 'function') cube = { fn: cube };
+  if (cube?.output_formats) ({ output_formats } = cube);
+  const data = await cube!.fn({
+    ...query,
+    bbox: query.bbox,
+    instanceId,
+    f: query.f,
+    path: ctx.route.path,
+    'parameter-name': query['parameter-name'],
+    crs: query.crs,
+  });
   return responseHandler(ctx, data, output_formats);
 }
 async function area(ctx: ExegesisContext) {
-  const { instanceId, collectionId } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.area!;
-  const { f: format, ...params } = ctx.params.query;
-  const { path } = ctx.route;
-  const data = await handler({
-    ...params,
+  const {
+    path: { instanceId, collectionId },
+    query,
+  } = ctx.params;
+  let {
+    output_formats,
+    data_queries: { area },
+  } = services[collectionId];
+  if (typeof area === 'function') area = { fn: area };
+  if (area?.output_formats) ({ output_formats } = area);
+  const data = await area!.fn({
+    ...query,
+    coords: query.coords,
     instanceId,
-    path,
+    f: query.f,
+    path: ctx.route.path,
+    'parameter-name': query['parameter-name'],
+    crs: query.crs,
   });
   return responseHandler(ctx, data, output_formats);
 }
 async function trajectory(ctx: ExegesisContext) {
-  const { instanceId, collectionId } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.trajectory!;
-  const { f: format, ...params } = ctx.params.query;
-  const { path } = ctx.route;
-  const data = await handler({
-    ...params,
-    path,
-    format,
+  const {
+    path: { instanceId, collectionId },
+    query,
+  } = ctx.params;
+  let {
+    output_formats,
+    data_queries: { trajectory },
+  } = services[collectionId];
+  if (typeof trajectory === 'function') trajectory = { fn: trajectory };
+  if (trajectory?.output_formats) ({ output_formats } = trajectory);
+  const data = await trajectory!.fn({
+    coords: query.coords,
+    instanceId,
+    f: query.f,
+    path: ctx.route.path,
+    'parameter-name': query['parameter-name'],
+    crs: query.crs,
+    ...query,
   });
   return responseHandler(ctx, data, output_formats);
 }
 async function corridor(ctx: ExegesisContext) {
-  const { instanceId, collectionId } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.corridor!;
-  const { f: format, ...params } = ctx.params.query;
-  const { path } = ctx.route;
-  const data = await handler({
-    ...params,
-    format,
+  const {
+    path: { instanceId, collectionId },
+    query,
+  } = ctx.params;
+  let {
+    output_formats,
+    data_queries: { corridor },
+  } = services[collectionId];
+  if (typeof corridor === 'function') corridor = { fn: corridor };
+  if (corridor?.output_formats) ({ output_formats } = corridor);
+  const data = await corridor!.fn({
+    coords: buffer(query.coords, query['corridor-width'] / 2, { units: query['width-units'] })!
+      .geometry,
+    'corridor-height': query['corridor-height'],
+    'corridor-width': query['corridor-width'],
     instanceId,
-    path,
+    f: query.f,
+    path: ctx.route.path,
+    'parameter-name': query['parameter-name'],
+    crs: query.crs,
+    ...query,
   });
   return responseHandler(ctx, data, output_formats);
 }
 async function position(ctx: ExegesisContext) {
-  const { instanceId, collectionId } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.position!;
-  const { f: format, ...params } = ctx.params.query;
-  const { path } = ctx.route;
-  const data = await handler({
-    ...params,
-    format,
+  const {
+    path: { instanceId, collectionId },
+    query,
+  } = ctx.params;
+  let {
+    output_formats,
+    data_queries: { position },
+  } = services[collectionId];
+  if (typeof position === 'function') position = { fn: position };
+  if (position?.output_formats) ({ output_formats } = position);
+  const data = await position!.fn({
+    coords: query.coords,
     instanceId,
-    path,
-  });
-  return responseHandler(ctx, data, output_formats);
-}
-async function locations(ctx: ExegesisContext) {
-  const { collectionId, ...pathParams } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { queryAll, queryOne, output_formats = fallbackFormats } = data_queries.locations!;
-  const { f: format, ...queryParams } = ctx.params.query;
-  const { path } = ctx.route;
-  let action: typeof queryAll | typeof queryOne;
-  if ('locId' in pathParams) {
-    if (!pathParams.locId) throw ctx.makeError(404, 'Invalid locId');
-    action = queryOne;
-  } else action = queryAll;
-  const data = await action({
-    ...queryParams,
-    ...pathParams,
-    format,
-    path,
-  });
-  return responseHandler(ctx, data, output_formats);
-}
-async function items(ctx: ExegesisContext) {
-  const { collectionId, ...pathParams } = ctx.params.path;
-  const { output_formats: fallbackFormats, data_queries } = services[collectionId];
-  const { handler, output_formats = fallbackFormats } = data_queries.locations!;
-  const { f: format, ...queryParams } = ctx.params.query;
-  const { path } = ctx.route;
-  if ('itemId' in pathParams && !pathParams.itemId) throw ctx.makeError(404, 'invalid itemId');
-  const data = await handler({
-    ...queryParams,
-    ...pathParams,
-    format,
-    path,
+    f: query.f,
+    path: ctx.route.path,
+    'parameter-name': query['parameter-name'],
+    crs: query.crs,
+    ...query,
   });
   return responseHandler(ctx, data, output_formats);
 }
 
-function issEdrGeoJSON(data: Return): data is EdrGeoJSON {
+async function locationsQueryAll(ctx: ExegesisContext) {
+  const {
+    path: { collectionId, instanceId },
+    query,
+  } = ctx.params;
+  const {
+    data_queries: { locations },
+  } = services[collectionId];
+
+  const data = await locations!.queryAll({
+    crs: query.crs,
+    path: ctx.route.path,
+    f: query.f,
+    instanceId,
+    ...query,
+  });
+  return responseHandler(ctx, data, ['JSON', 'GEOJSON']);
+}
+async function locationsQueryOne(ctx: ExegesisContext) {
+  const {
+    path: { collectionId, instanceId, locId },
+    query,
+  } = ctx.params;
+  const {
+    data_queries: { locations },
+    output_formats,
+  } = services[collectionId];
+  const data = await locations!.queryOne({
+    crs: query.crs,
+    path: ctx.route.path,
+    f: query.f,
+    'parameter-name': query['parameter-name'],
+    instanceId,
+    locId,
+    ...query,
+  });
+  return responseHandler(ctx, data, locations?.output_formats || output_formats);
+}
+async function itemsQueryAll(ctx: ExegesisContext) {
+  const {
+    path: { collectionId, instanceId },
+    query,
+  } = ctx.params;
+  const {
+    data_queries: { items },
+  } = services[collectionId];
+
+  const data = await items!.queryAll({
+    crs: query.crs,
+    path: ctx.route.path,
+    f: query.f,
+    instanceId,
+    ...query,
+  });
+  return responseHandler(ctx, data, ['JSON', 'GEOJSON']);
+}
+async function itemsQueryOne(ctx: ExegesisContext) {
+  const {
+    path: { collectionId, instanceId, itemId },
+    query,
+  } = ctx.params;
+  const {
+    data_queries: { items },
+    output_formats,
+  } = services[collectionId];
+  const data = await items!.queryOne({
+    crs: query.crs,
+    path: ctx.route.path,
+    f: query.f,
+    instanceId,
+    itemId,
+    ...query,
+  });
+  return responseHandler(ctx, data, items?.output_formats || output_formats);
+}
+
+function isEdrGeoJSON(data: Return): data is EdrGeoJSON {
   if (isCovJson(data)) return false;
   if (data.type === 'FeatureCollection') {
     return 'parameters' in data;
   }
-  return 'edrquerypoint' in (data.properties || {});
+  return 'edrqueryendpoint' in (data.properties || {});
 }
 
 function updateEdrQueryPoint(ctx: ExegesisContext) {
@@ -187,8 +294,8 @@ function updateEdrQueryPoint(ctx: ExegesisContext) {
   };
 }
 
-function processEdrGeoJSON(ctx: ExegesisContext, data: EdrGeoJSON): EdrGeoJSON {
-  if (data.type === 'Feature') return updateEdrQueryPoint(ctx)(data);
+function processEdrGeoJSON<T extends EdrGeoJSON>(ctx: ExegesisContext, data: T): T {
+  if (data.type === 'Feature') return updateEdrQueryPoint(ctx)(data) as T;
   data.features.forEach((feat, i, arr) => {
     arr[i] = updateEdrQueryPoint(ctx)(feat);
   });
@@ -204,13 +311,31 @@ function isCovJson(data: Return): data is Exclude<CoverageJSON, NdArray> {
 
 function responseHandler(ctx: ExegesisContext, data: Return, alternates: ContentTypeNegotiator[]) {
   if (isCovJson(data)) return ctx.res.status(200).setBody(data);
-  if (issEdrGeoJSON(data)) data = processEdrGeoJSON(ctx, data);
-  data.links = data.links || [];
+  const links = new Links(ctx).self().alternates(...alternates);
 
-  data.links.push(...new Links(ctx).self().alternates(alternates).links);
-  if (data.type === 'FeatureCollection') {
-    data.links.push(...new Links(ctx).pagination(data.features.length).links);
+  if (data.type === 'Feature') {
+    if (isEdrGeoJSON(data)) data = processEdrGeoJSON(ctx, data);
+  } else {
+    for (let i = 0; i < data.features.length; i++) {
+      const feature = data.features[i];
+      links.toItem(feature.id);
+      if (!isEdrGeoJSON(feature)) continue;
+      data.features[i] = processEdrGeoJSON(ctx, feature);
+    }
+    const { length: len } = data.features;
+    links.pagination(len);
+    const { limit = len, offset = 0 } = ctx.params.query;
+    data.numberReturned = numberReturned(len, limit, offset);
+    data.timeStamp = new Date().toJSON();
   }
-
+  if (isGeoJSON(data)) ctx.res.set('content-type', contentTypes.GEOJSON);
+  data.links = data.links || [];
+  data.links.push(...links.links);
   ctx.res.status(200).setBody(data);
+}
+
+function isGeoJSON(data: Return): data is FeatureCollection | Feature | EdrGeoJSON {
+  if (data.type === 'Feature') return true;
+  if (data.type === 'FeatureCollection') return true;
+  return false;
 }

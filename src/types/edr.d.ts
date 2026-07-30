@@ -8,7 +8,7 @@ import type {
   Feature,
   FeatureCollection,
 } from './features.d.ts';
-import type { I18N, Parameter as PR } from 'coveragejson';
+import type { Parameter as PR } from 'coveragejson';
 import type { Length } from 'convert';
 import type { Geometry } from 'geojson';
 
@@ -40,9 +40,8 @@ export type EdrGeoJsonProperties = {
   /**
    *@description A label such as a site name or other text to use on a link.
    * @example Site A
-   * @throws error in covjson-validator if not I18N
    */
-  label: I18N;
+  label: string;
   /**
    * @description Unique IDs of available parameters, this is the value used for querying the data and corresponds to an ID in the parameter metadata of the collection.
    * @example ["velocity","temperature"]
@@ -50,10 +49,10 @@ export type EdrGeoJsonProperties = {
   'parameter-name': Array<string>;
   [key: string]: unknown;
 };
-export interface EdrFeature<
+export type EdrFeature<
   G extends Geometry = Geometry,
   P extends EdrGeoJsonProperties = EdrGeoJsonProperties,
-> extends Feature<G, P> {}
+> = Feature<G, P>;
 
 export interface EdrFeatureCollection<
   G extends Geometry = Geometry,
@@ -65,17 +64,19 @@ export interface EdrFeatureCollection<
 export type EdrGeoJSON = EdrFeatureCollection | EdrFeature;
 export type Extent = {
   spatial: Ext['spatial'] & {
-    crs?: string;
+    crs: string;
     values?: {
       x: string[];
       y: string[];
     };
+    name?: string;
   };
-  temporal: Ext['temporal'] & { values: null | string[] };
+  temporal: Ext['temporal'] & { values?: string[]; name?: string };
   vertical?: {
     interval: Interval[];
-    values: string[] | number[] | null;
+    values?: string[];
     vrs: string;
+    name?: string;
   };
 };
 export interface Collection extends CN {
@@ -86,89 +87,68 @@ export interface Collection extends CN {
   data_queries: DataQueries;
   distanceunits: string[];
 }
+export type Collections<T extends 'instances' | 'collections' = 'collections'> = {
+  [key in T]: Collection[];
+} & {
+  links: Link[];
+};
 
-export interface BaseVariables {
+export interface BaseVariables<QT extends keyof DataQueries> {
   title?: string;
   description?: string;
   output_formats?: string[];
-  default_output_format: string;
+  default_output_format?: string;
   crs_details?: {
     wkt: string;
     crs: string;
   }[];
+  query_type: QT;
 }
-export interface LinkObject<
-  T =
-    | AreaDataQuery
-    | PositionDataQuery
-    | CorridorDataQuery
-    | CubeDataQuery
-    | InstancesDataQuery
-    | ItemsDataQuery
-    | LocationsDataQuery
-    | RadiusDataQuery
-    | TrajectoryDataQuery,
-> {
-  link: Link & { variables: T };
+export interface LinkObject<T extends DataQueryVariables> extends Link {
+  variables: T;
 }
 export interface DataQueries {
-  position?: LinkObject<PositionDataQuery>;
-  area?: LinkObject<AreaDataQuery>;
-  corridor?: LinkObject<CorridorDataQuery>;
-  cube?: LinkObject<CubeDataQuery>;
-  instances?: LinkObject<InstancesDataQuery>;
-  items?: LinkObject<ItemsDataQuery>;
-  locations?: LinkObject<LocationsDataQuery>;
-  radius?: LinkObject<RadiusDataQuery>;
-  trajectory?: LinkObject<TrajectoryDataQuery>;
+  position?: { link: LinkObject<PositionVariables> };
+  area?: { link: LinkObject<AreaVariables> };
+  corridor?: { link: LinkObject<CorridorVariables> };
+  cube?: { link: LinkObject<CubeVariables> };
+  // instances?: LinkObject<InstancesDataQuery>;
+  items?: { link: LinkObject<ItemsVariables> };
+  locations?: { link: LinkObject<LocationsVariables> };
+  radius?: { link: LinkObject<RadiusVariables> };
+  trajectory?: { link: LinkObject<TrajectoryVariables> };
 }
 
-export interface AreaDataQuery extends BaseVariables {
-  query_type: 'area';
-}
-export interface CorridorDataQuery extends BaseVariables {
-  query_type: 'corridor';
-  /**list of width distance units distance values can be specified in */
-  width_units: Length[];
-  /**list of height distance units distance values can be specified in */
-  height_units: Length[];
-}
-export interface CubeDataQuery extends BaseVariables {
-  query_type: 'cube';
-  /** list of z distance units vertical values can be specified in*/
-  height_units: Length[];
-}
+export type DataQueryVariables =
+  | AreaVariables
+  | PositionVariables
+  | CorridorVariables
+  | CubeVariables
+  | ItemsVariables
+  | LocationsVariables
+  | RadiusVariables
+  | TrajectoryVariables;
 
-export interface InstancesDataQuery extends BaseVariables {
-  query_type: 'instances';
-}
-export interface ItemsDataQuery extends BaseVariables {
-  query_type: 'items';
-}
-export interface LocationsDataQuery extends BaseVariables {
-  query_type: 'locations';
+export type AreaVariables = BaseVariables<'area'>;
+export type CorridorVariables = BaseVariables<'corridor'> & {
+  width_units?: Length[];
+  height_units?: Length[];
+};
+export type CubeVariables = BaseVariables<'cube'> & {
+  height_units?: Length[];
+};
+
+export type ItemsVariables = BaseVariables<'items'>;
+export type LocationsVariables = BaseVariables<'locations'> & {
   multi?: boolean;
-}
-export interface PositionDataQuery extends BaseVariables {
-  query_type: 'position';
-}
+};
+export type PositionVariables = BaseVariables<'position'>;
 
-export interface RadiusDataQuery extends BaseVariables {
+export type RadiusVariables = BaseVariables<'radius'> & {
   query_type: 'radius';
-  /**list of distance units radius values can be specified in @example ["km","miles"]*/
   within_units: Length[];
-}
-export interface TrajectoryDataQuery extends BaseVariables {
-  query_type: 'trajectory';
-}
-
-export interface BaseDataQuery {
-  title: string;
-  description: string;
-  output_formats?: Array<string>;
-  crs_details?: { crs: string; wkt: string }[];
-  default_output_format: string;
-}
+};
+export type TrajectoryVariables = BaseVariables<'trajectory'>;
 
 export interface Parameter extends PR {
   extent?: Collection['extent'];

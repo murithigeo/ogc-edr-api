@@ -59,7 +59,7 @@ features:
   - type: Feature
     properties:
       feet: 4750
-      meters: null
+      meters: 1450 #null
       name: Mount Guera
       regions:
         - Sahara Desert Ranges
@@ -30505,7 +30505,7 @@ features:
   - type: Feature
     properties:
       feet: 11413
-      meters: null
+      meters: 3479 #null
       name: Mount Torbert
       regions:
         - Alaska/Yukon Ranges
@@ -31598,7 +31598,7 @@ features:
   - type: Feature
     properties:
       feet: 7863
-      meters: null
+      meters: 2396 #null
       name: Burney Mountain
       regions:
         - Pacific Ranges
