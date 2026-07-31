@@ -1,18 +1,10 @@
 import type { PromiseController } from 'exegesis';
-import type { Dataset, Extent } from '../../../services/types.d.ts';
-import type {
-  Collection,
-  Collections,
-  DataQueries,
-  DataQueryVariables,
-} from '../../../src/types/edr.d.ts';
-import services from '../../../services/index.ts';
+import type { Collection, Collections, DataQueries, DataQueryVariables } from '../edr.d.ts';
+import services, { type Extent, type Dataset } from '../../../services/index.ts';
 import { get, toURI } from '@murithigeo/uriproj';
-import { contentTypes, type ContentTypeNegotiator } from '../../../src/content-types.ts';
-import { Links } from '../../../src/links.ts';
+import { Links, contentTypes, type Format, Referencing } from '../../../utils/index.ts';
 import type { ExegesisContext } from 'exegesis-express';
 import { stringify } from 'yaml';
-import { Referencing } from '../../../utils/reprojection.ts';
 
 export default {
   listCollections: async (ctx) => {
@@ -154,7 +146,7 @@ function toCollection(
 }
 
 interface Options {
-  default_output_format: ContentTypeNegotiator;
+  default_output_format: Format;
   hostname: string;
   instanceId?: string;
   collectionId: string;
@@ -171,7 +163,7 @@ function getDataQueries(queries: Dataset['data_queries'], options: Options) {
     if (options.instanceId) {
       href += `/instances/${options.instanceId}`;
     }
-    let default_output_format: ContentTypeNegotiator | undefined;
+    let default_output_format: Format | undefined;
     if (query_type === 'locations') default_output_format = 'GEOJSON';
 
     href += `/${query_type}`;

@@ -1,10 +1,4 @@
-import type {
-  Feature as F,
-  Geometry,
-  FeatureCollection as FC,
-  GeoJsonProperties,
-  BBox,
-} from 'geojson';
+import type { Feature as F, Geometry, GeoJsonProperties, BBox } from 'geojson';
 export type Link = {
   href: string;
   rel: string;

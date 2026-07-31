@@ -1,6 +1,6 @@
 import { middleware } from 'exegesis-express';
 import cors from 'cors';
-import { handleErrorFunction as autoHandleHttpErrors } from '../../src/exception.ts';
+import { autoHandleHttpErrors, logger } from '../../utils/index.ts';
 import root_controller from './controllers/root_controller.ts';
 import conformance_controller from './controllers/conformance_controller.ts';
 import collections_controller from './controllers/collections_controller.ts';
@@ -9,10 +9,9 @@ import service_controller from './controllers/service_controller.ts';
 import path from 'node:path';
 import express from 'express';
 import plugin from './plugin.ts';
-import logger from '../../utils/logger.ts';
+
 const app = express();
 app.use(cors());
-// app.use(pino.());
 app.use(logger);
 const edr = middleware(path.resolve(import.meta.dirname, 'edr.yaml'), {
   autoHandleHttpErrors,

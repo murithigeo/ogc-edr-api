@@ -1,5 +1,5 @@
 import type { ExegesisContext } from 'exegesis-express';
-import { contentTypes } from '../../../src/content-types.ts';
+import { contentTypes } from '../../../utils/content-types.ts';
 import yaml from 'yaml';
 import { getHtmlDocument } from '@scalar/core/libs/html-rendering';
 export default {

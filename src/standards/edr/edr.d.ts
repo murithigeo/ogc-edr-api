@@ -7,7 +7,7 @@ import type {
   Extent as Ext,
   Feature,
   FeatureCollection,
-} from './features.d.ts';
+} from '../features/features.d.ts';
 import type { Parameter as PR } from 'coveragejson';
 import type { Length } from 'convert';
 import type { Geometry } from 'geojson';
@@ -58,7 +58,7 @@ export interface EdrFeatureCollection<
   G extends Geometry = Geometry,
   P extends EdrGeoJsonProperties = EdrGeoJsonProperties,
 > extends FeatureCollection<G, P> {
-  parameters: PR[];
+  parameters?: PR[];
 }
 
 export type EdrGeoJSON = EdrFeatureCollection | EdrFeature;
@@ -187,4 +187,4 @@ declare module 'exegesis-express' {
     api: OAS3ApiInfo;
   }
 }
-export type * from './features.d.ts';
+export type * from '../features/features.d.ts';

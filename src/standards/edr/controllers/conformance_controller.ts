@@ -1,5 +1,5 @@
 import type { PromiseController } from 'exegesis';
-import { Links } from '../../../src/links.ts';
+import { Links } from '../../../utils/index.ts';
 
 const getConformance: PromiseController = (ctx) =>
   ctx.res.status(200).json({

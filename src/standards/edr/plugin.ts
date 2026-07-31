@@ -2,13 +2,16 @@ import { toURI } from '@murithigeo/uriproj';
 import { type ExegesisPlugin } from 'exegesis';
 import type { ExegesisPluginContext } from 'exegesis-express';
 import type { BBox } from 'geojson';
-import services from '../../services/index.ts';
-import type { DataQueries } from '../../src/types/edr.d.ts';
+import services, { type RadiusConfig, type CorridorConfig } from '../../services/index.ts';
+import type { DataQueries } from './edr.d.ts';
 import { convert, type Length } from 'convert';
-import type { CorridorConfig, RadiusConfig } from '../../services/types.d.ts';
-import { Referencing } from '../../utils/reprojection.ts';
-import zParse from '../../src/z-parse.ts';
-import datetimeParse from '../../src/datetime-parse.ts';
+import {
+  Referencing,
+  parseDatetimeQueryParam,
+  parseZQueryParam,
+  contentTypes,
+  type Format,
+} from '../../utils/index.ts';
 import {
   Geometry,
   LineString,
@@ -18,7 +21,6 @@ import {
   Point,
   Polygon,
 } from 'wkx';
-import { contentTypes, type ContentTypeNegotiator as Format } from '../../src/content-types.ts';
 
 export default function (): ExegesisPlugin {
   return {
@@ -185,10 +187,9 @@ export default function (): ExegesisPlugin {
           //@ts-expect-error expects string but is a geojson
           query.coords = toNativeReferencing.geometry(geojson);
         }
-        //@ts-expect-error Expects query.z to be string
-        if (z) query.z = zParse(z);
-        //@ts-expect-error Expects query.datetime to be string
-        if (datetime) query.datetime = datetimeParse(datetime);
+        if (z) query.z = parseZQueryParam(z);
+        if (datetime) query.datetime = parseDatetimeQueryParam(datetime);
+
         if (query_type === 'corridor') {
           let height_units: Length[] = distanceunits;
           let width_units: Length[] = distanceunits;

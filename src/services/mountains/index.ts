@@ -1,17 +1,17 @@
 import type { BBox, Point } from 'geojson';
-import type { Dataset } from '../types.d.ts';
+import type { Dataset } from '../types.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import yaml from 'yaml';
 import calcBbox from '@turf/bbox';
 import { HttpError } from 'exegesis';
 import bboxPolygon from '@turf/bbox-polygon';
-import { geometryIntersects, zIntersects } from '../../src/boolean-intersects/index.ts';
+import { geometryIntersects, zIntersects } from '../../utils/boolean-intersects/index.ts';
 import { toURI } from '@murithigeo/uriproj';
-import type { Extent } from '../types.d.ts';
-import geometry from '../../src/boolean-intersects/geometry.ts';
-import type { EdrFeature, Feature } from '../../src/types/edr.d.ts';
-import type { Z } from '../../src/z-parse.ts';
+import type { Extent } from '../types.js';
+import geometry from '../../utils/boolean-intersects/geometry.ts';
+import type { EdrFeature, Feature } from '../../standards/edr/edr.d.ts';
+import type { Z } from '../../utils/query-parsers/z.ts';
 type Mountain = Feature<
   Point,
   {

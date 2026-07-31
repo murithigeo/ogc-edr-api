@@ -1,9 +1,9 @@
 import proj4 from 'proj4';
 import type { GeoJsonProperties, Geometry, Position } from 'geojson';
 import { type Converter, get, toURI, load } from '@murithigeo/uriproj';
-import type { Feature } from '../src/types/features.d.ts';
+import type { Feature } from '../standards/features/features.js';
 
-export class Referencing {
+export default class Referencing {
   converter: Converter;
   from: string;
   to: string;

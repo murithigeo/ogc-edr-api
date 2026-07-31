@@ -8,5 +8,6 @@
     "strict": true,
     "lib": ["ES2024"],
     "noImplicitThis": true,
-  },
+    "moduleResolution": "nodenext"
+  }
 }

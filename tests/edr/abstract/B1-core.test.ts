@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import Schema from 'typebox/schema';
-import { LandingPageSchema } from '../../../standards/edr/schemas/landing-page.ts';
+import { LandingPageSchema } from '../../../src/standards/edr/schemas/landing-page.ts';
 
 describe('http://www.opengis.net/spec/ogcapi-edr-1/1.1/conf/core', () => {
   describe('B.2.2. Landing Page {root}/', async () => {

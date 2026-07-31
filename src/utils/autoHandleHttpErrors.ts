@@ -8,7 +8,7 @@ interface Exception {
 /**
  * Convert exegesis Error classes into OGC API Exceptions
  */
-export const handleErrorFunction: HandleErrorFunction = (err) => {
+const autoHandleHttpErrors: HandleErrorFunction = (err) => {
   console.error(err);
 
   const exception: Exception = { code: 500, description: 'Internal Server Error' };
@@ -25,3 +25,5 @@ export const handleErrorFunction: HandleErrorFunction = (err) => {
     body: JSON.stringify({ ...exception, code: exception.code.toString() }),
   };
 };
+
+export default autoHandleHttpErrors;

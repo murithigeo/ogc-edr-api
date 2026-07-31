@@ -1,3 +1,5 @@
+// import type { HasFunction } from '../services/types.d.ts';
+
 export type DateTime = string | Partial<Record<'min' | 'max', string>> | string[];
 
 export default function (datetime: string): DateTime {

@@ -1,6 +1,6 @@
-import type { ExegesisContext, PromiseController } from 'exegesis-express';
-import type { LandingPage } from '../../../src/types/edr.d.ts';
-import { Links } from '../../../src/links.ts';
+import type { PromiseController } from 'exegesis-express';
+import type { LandingPage } from '../edr.d.ts';
+import { Links } from '../../../utils/index.ts';
 
 const getLandingPage: PromiseController = async (ctx) => {
   const json: LandingPage = {

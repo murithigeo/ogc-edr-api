@@ -1,12 +1,12 @@
 import type { ExegesisContext } from 'exegesis-express';
-import type { Link } from './types/features.d.ts';
-import { contentTypes, type ContentTypeNegotiator } from './content-types.ts';
+import type { Link } from '../standards/features/features.js';
+import { contentTypes, type Format } from './content-types.ts';
 
-export class Links {
+export default class Links {
   origin: string;
   pathname: string;
   url: string;
-  format: ContentTypeNegotiator;
+  format: Format;
   limit = 0;
   offset = 0;
   collectionId?: string;
@@ -69,7 +69,7 @@ export class Links {
     });
     return this;
   }
-  alternates(...alternates: ContentTypeNegotiator[]): this {
+  alternates(...alternates: Format[]): this {
     for (const f of alternates) {
       if (f === this.format) continue;
       const url = new URL(this.url);

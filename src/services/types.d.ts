@@ -13,12 +13,11 @@ import type {
   Parameter,
   FeatureCollection,
   Feature,
-} from '../src/types/edr.d.ts';
-import type { Coverage, CoverageCollection, Domain, NdArray } from 'coveragejson';
+} from '../standards/edr/edr.d.ts';
+import type { CoverageCollection, NdArray } from 'coveragejson';
 import type { Length } from 'convert';
 import type { CoverageJSON } from 'coveragejson';
-import type { ContentTypeNegotiator as Format } from '../src/content-types.ts';
-import type { Referencing } from '../utils/reprojection.ts';
+import type { Referencing, Format } from '../utils/index.ts';
 
 export interface Dataset {
   id: string;
@@ -87,10 +86,10 @@ export interface DataQueryConfig {
  * Return a boolean to indicate whether the value exists.
  * Return a string to replace the value passed
  */
-type HasFunction = (val: string) => Promise<boolean | string> | string | boolean;
+type HasFunction<T extends string | number> = (val: T) => Promise<boolean | T> | T | boolean;
 type PaginationParams = Partial<Record<'limit' | 'offset', number>>;
-type ResolutionParams<D extends 'z' | 'y' | 'x' | never = never> = Partial<
-  Record<`resolution-${D extends never ? 'x' | 'y' | 'z' : Exclude<'x' | 'y' | 'z', D>}`, number>
+export type ResolutionParams<D extends 'x' | 'y' | 'z' = never> = Partial<
+  Record<`resolution-${Exclude<'x' | 'y' | 'z', D>}`, number>
 >;
 
 type QueryFn<
@@ -114,22 +113,22 @@ type ConfigWithFn<Fn, F extends Format = Format, Plus extends object = object> =
 } & Plus;
 export interface LocationsConfig<T extends Format = Format> extends BaseConfig<T> {
   multi?: boolean;
-  has?: HasFunction;
+  has?: HasFunction<string>;
   queryAll: QueryFn<T, object, never, 'parameter-name', EdrFeatureCollection>;
   queryOne: QueryFn<T, { locId: string } & PaginationParams>;
 }
 
 export interface ItemsConfig<F extends Format = Format> extends BaseConfig<F> {
-  queryAll: QueryFn<F, PaginationParams, never, 'parameter-name', EdrFeatureCollection | string>;
+  queryAll: QueryFn<F, PaginationParams, never, 'parameter-name', EdrFeatureCollection>;
   queryOne: QueryFn<
     F,
     { itemId: string },
     never,
     'bbox' | 'parameter-name' | 'z' | 'datetime',
-    EdrFeature | Feature | Coverage | Domain
+    Return
   >;
 
-  has?: HasFunction;
+  has?: HasFunction<string>;
 }
 
 export type RadiusFn<F extends Format = Format> = QueryFn<
@@ -180,7 +179,7 @@ export interface InstancesConfig<T extends Format = Format> extends BaseConfig<T
    * The value to use when the instanceId is "","latest","default"
    */
   handler(instanceId: undefined | string): Promise<Extent[]> | Extent[];
-  has: HasFunction;
+  has: HasFunction<string>;
   hasElevation?(val: number): Promise<boolean> | boolean;
   hasDatetime?(val: string): Promise<boolean> | boolean;
 }

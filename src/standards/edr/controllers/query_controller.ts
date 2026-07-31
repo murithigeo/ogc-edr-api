@@ -1,19 +1,10 @@
 import type { PromiseController } from 'exegesis';
 import type { ExegesisContext } from 'exegesis-express';
-import services from '../../../services/index.ts';
-import type {
-  EdrFeature,
-  EdrGeoJSON,
-  Feature,
-  FeatureCollection,
-} from '../../../src/types/edr.d.ts';
-import { Links } from '../../../src/links.ts';
-import type { Return } from '../../../services/types.d.ts';
+import type { EdrFeature, EdrGeoJSON, Feature, FeatureCollection } from '../edr.d.ts';
+import services, { type Return } from '../../../services/index.ts';
 import type { CoverageJSON, NdArray } from 'coveragejson';
-import { contentTypes, type ContentTypeNegotiator } from '../../../src/content-types.ts';
 import buffer from '@turf/buffer';
-import numberReturned from '../../../utils/numberReturned.ts';
-import type { Geometry } from 'geojson';
+import { calculateNumberReturned, Links, type Format, contentTypes } from '../../../utils/index.ts';
 export default {
   // radius
   'get:radius:collection': (ctx) => radius(ctx),
@@ -309,7 +300,7 @@ function isCovJson(data: Return): data is Exclude<CoverageJSON, NdArray> {
   return false;
 }
 
-function responseHandler(ctx: ExegesisContext, data: Return, alternates: ContentTypeNegotiator[]) {
+function responseHandler(ctx: ExegesisContext, data: Return, alternates: Format[]) {
   if (isCovJson(data)) return ctx.res.status(200).setBody(data);
   const links = new Links(ctx).self().alternates(...alternates);
 
@@ -325,7 +316,7 @@ function responseHandler(ctx: ExegesisContext, data: Return, alternates: Content
     const { length: len } = data.features;
     links.pagination(len);
     const { limit = len, offset = 0 } = ctx.params.query;
-    data.numberReturned = numberReturned(len, limit, offset);
+    data.numberReturned = calculateNumberReturned(len, limit, offset);
     data.timeStamp = new Date().toJSON();
   }
   if (isGeoJSON(data)) ctx.res.set('content-type', contentTypes.GEOJSON);

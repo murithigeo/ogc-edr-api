@@ -1,6 +1,6 @@
 import { load, toURI } from '@murithigeo/uriproj';
 import { mountains } from './mountains/index.ts';
-import type { Dataset } from './types.d.ts';
+import type { Dataset } from './types.js';
 
 const crs = Array<string>();
 const datasets = [mountains];
@@ -18,3 +18,5 @@ datasets.forEach((ds, i, arr) => {
 await Promise.all(crs.map(load));
 
 export default datasets.reduce((l: Record<string, Dataset>, r) => ({ ...l, [r.id]: r }), {});
+
+export type * from './types.d.ts';
